@@ -32,5 +32,7 @@ app.run()
 ## Usage
 
 1 Install Python for Windows.
+
 2 Download the `tymber.pyd` file for your version of Python from the respective subdirectory of `bin` (e.g. `39_64` for Python 3.9, 64 bit).
+
 3 Put it into the directory of your script and import it.
