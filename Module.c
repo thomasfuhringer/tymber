@@ -122,7 +122,6 @@ Tymber_settings_get(PyObject* self, PyObject* args)
 	}
 
 	szStr = toW(strSubKey);
-	//MessageBox(0, szStr, szKey, 0);
 	response = RegQueryValueExW(hKey, szStr, 0, NULL, strData, (LPBYTE)(&dwSizeData));
 	if (response == ERROR_PATH_NOT_FOUND || response == ERROR_FILE_NOT_FOUND) {
 		RegCloseKey(hKey);
@@ -136,7 +135,6 @@ Tymber_settings_get(PyObject* self, PyObject* args)
 	}
 	RegCloseKey(hKey);
 	PyMem_RawFree(szStr);
-	//printf("DestroyWindow2 %d \n", dwSizeData);
 
 	if ((pyValue = PyBytes_FromStringAndSize(strData, dwSizeData)) == NULL)
 		return NULL;
@@ -170,7 +168,6 @@ PyInit_tymber(void)
 	g->hfDefaultFont = GetStockObject(DEFAULT_GUI_FONT);
 	g->hMenu = CreateMenu();
 	g->hHeap = GetProcessHeap();
-	//g->szWindowClass = L"MainWindowClass";
 	g->hCursorWestEast = LoadCursor(NULL, MAKEINTRESOURCEW(IDC_SIZEWE));    // for Splitter
 	g->hCursorNorthSouth = LoadCursor(NULL, MAKEINTRESOURCEW(IDC_SIZENS));
 	g->hBkgBrush = (BOOL)GetSysColorBrush(TyWINDOWBKGCOLOR);
@@ -180,7 +177,7 @@ PyInit_tymber(void)
 		PyErr_SetFromWindowsErr(0);
 		return -1;
 	}
-	/* not working
+	/* not working, related to this: https://bugs.python.org/issue5019
 	g->hDLLcomctl32 = GetModuleHandleW("COMCTL32.DLL");
 	if (g->hDLLcomctl32 == 0) {
 		PyErr_SetFromWindowsErr(0);
@@ -278,6 +275,9 @@ PyInit_tymber(void)
 	if (PyType_Ready(&TyImageViewType) < 0)
 		return NULL;
 
+	if (PyType_Ready(&TyComboBoxType) < 0)
+		return NULL;
+
 	Py_INCREF(&TyApplicationType);
 	Py_INCREF(&TyWindowType);
 	Py_INCREF(&TyMenuType);
@@ -297,6 +297,7 @@ PyInit_tymber(void)
 	Py_INCREF(&TyTabType);
 	Py_INCREF(&TyTabPageType);
 	Py_INCREF(&TyImageViewType);
+	Py_INCREF(&TyComboBoxType);
 
 	PyModule_AddObject(pyModule, "Application", (PyObject*)&TyApplicationType);
 	PyModule_AddObject(pyModule, "Window", (PyObject*)&TyWindowType);
@@ -317,6 +318,7 @@ PyInit_tymber(void)
 	PyModule_AddObject(pyModule, "Tab", (PyObject*)&TyTabType);
 	PyModule_AddObject(pyModule, "TabPage", (PyObject*)&TyTabPageType);
 	PyModule_AddObject(pyModule, "ImageView", (PyObject*)&TyImageViewType);
+	PyModule_AddObject(pyModule, "ComboBox", (PyObject*)&TyComboBoxType);
 
 	if (PyDict_SetItemString(TyWidgetType.tp_dict, "default_coordinate", PyLong_FromLong(CW_USEDEFAULT)) == -1)
 		return NULL;
@@ -375,7 +377,6 @@ PyInit_tymber(void)
 		Py_DECREF(pyValue);
 	}
 
-	//printf("Hello init %d\n", 2);
 	PyModule_AddObject(pyModule, "app", (PyObject*)g->pyApp);
 	PyModule_AddObject(pyModule, "native", PyLong_FromLong(g->hInstance));
 	g->pyModule = pyModule;

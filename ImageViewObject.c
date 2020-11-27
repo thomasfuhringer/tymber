@@ -1,17 +1,13 @@
 ﻿// ImageView.c  | Tymber © 2020 by Thomas Führinger
-// UNDER CONSTRUCTION
 
 #include "Tymber.h"
 #include "Resource.h"
 
-static HBITMAP hPlaceholderBitmap;
 static BITMAP bitmap;
 
 static PyObject*
 TyImageView_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-	PyErr_SetString(PyExc_TypeError, "ImageView is not yet implemented.");
-	return NULL;
 	TyImageViewObject* self = (TyImageViewObject*)type->tp_base->tp_new(type, args, kwds);
 	if (self != NULL) {
 		self->bStretch = TRUE;
@@ -30,7 +26,6 @@ TyImageView_init(TyImageViewObject* self, PyObject* args, PyObject* kwds)
 
 	RECT rect;
 	TyWidget_CalculateRect(self, &rect);
-
 	self->hWin = CreateWindowExW(0, L"TyImageViewClass", L"",
 		WS_CHILD | WS_VISIBLE,
 		rect.left, rect.top, rect.right, rect.bottom,
@@ -76,80 +71,15 @@ TyImageView_OpenFileDialog(TyImageViewObject* self)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	printf("TyImageView_OpenFileDialog\n");
 	if (GetOpenFileNameW(&ofn)) {
-		LPCSTR sOpenFileNamePath = toU8(szOpenFileNamePath);
-		MessageBoxA(NULL, sOpenFileNamePath, "jj", NULL);
-		PyObject* pyArgs = Py_BuildValue("s", sOpenFileNamePath);
-		PyObject* pyImage;
-		pyImage = PyObject_CallObject((PyObject*)&TyImageType, pyArgs);
-		XX(pyImage);
-		Py_DECREF(pyArgs);
-		PyMem_RawFree(sOpenFileNamePath);
+		LPCSTR strOpenFileNamePath = toU8(szOpenFileNamePath);
+		PyObject* pyImage = PyObject_CallFunction((PyObject*)&TyImageType, "(s)", strOpenFileNamePath);
+		PyMem_RawFree(strOpenFileNamePath);
 		TyImageView_SetData(self, pyImage);
 		Py_DECREF(pyImage);
 	}
 	return TRUE;
 }
-
-/*
-BOOL
-TyImageView_Leave(TyImageViewObject* self)
-{
-self->pyData =
-
-int iSucess = GetDIBits(
-_In_     HDC hdc,
-_In_     HBITMAP hbmp,
-_In_     UINT uStartScan,
-_In_     UINT cScanLines,
-_Out_    LPVOID lpvBits,
-_Inout_  LPBITMAPINFO lpbi,
-_In_     UINT uUsage
-);
-
-if (iSucess == 0 || iSucess == ERROR_INVALID_PARAMETER)
-return FALSE;
-
-
-return TRUE;
-}
-
-BOOL
-TyImageView_SetData(TyImageViewObject* self, PyObject* pyData)
-{
-//http://stackoverflow.com/questions/2886831/win32-c-c-load-image-from-memory-buffer
-hBitmap = CreateBitmap
-}
-
-static HBITMAP
-PyBytes_AsWinBitmap(PyObject* pyByte, int iFormat)
-{
-if (iFormat = IMAGEFORMAT_BMP) {
-char* pBuffer = PyBytes_AsString(pyByte);
-BITMAPFILEHEADER bfh = *(BITMAPFILEHEADER*)pBuffer;
-BITMAPINFOHEADER bih = *(BITMAPINFOHEADER*)(pBuffer + sizeof(BITMAPFILEHEADER));
-RGBQUAD          rgb = *(RGBQUAD*)(pBuffer + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER));
-
-BITMAPINFO bi;
-bi.bmiColors[0] = rgb;
-bi.bmiHeader = bih;
-
-char* pPixels = (pBuffer + bfh.bfOffBits);
-char* ppvBits;
-
-HBITMAP hBitmap = CreateDIBSection(NULL, &bi, DIB_RGB_COLORS, (void**)&ppvBits, NULL, 0);
-SetDIBits(NULL, hBitmap, 0, bih.biHeight, pPixels, &bi, DIB_RGB_COLORS);
-return hBitmap;
-
-//GetObject(hBitmap, sizeof(BITMAP), &cBitmap);
-}
-else {
-PyErr_SetString(PyExc_RuntimeError, "Unsupported format");
-return 0;
-}
-}
-*/
 
 BOOL
 TyImageView_RenderData(TyImageViewObject* self, BOOL bFormat)
@@ -174,6 +104,10 @@ TyImageView_setattro(TyImageViewObject* self, PyObject* pyAttributeName, PyObjec
 {
 	if (PyUnicode_Check(pyAttributeName)) {
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "data") == 0) {
+			if (pyValue != Py_None && !PyObject_TypeCheck(pyValue, &TyImageType)) {
+				PyErr_Format(PyExc_TypeError, "Please assign an Image object!");
+				return -1;
+			}
 			if (!TyImageView_SetData(self, pyValue))
 				return -1;
 			return 0;
@@ -188,10 +122,7 @@ TyImageView_getattro(TyImageViewObject* self, PyObject* pyAttributeName)
 	PyObject* pyResult;
 	pyResult = PyObject_GenericGetAttr((PyObject*)self, pyAttributeName);
 	if (pyResult == NULL && PyErr_ExceptionMatches(PyExc_AttributeError) && PyUnicode_Check(pyAttributeName)) {
-		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "data") == 0) {
-			PyErr_Clear();
-			return self->pyData;
-		}
+		// for later
 	}
 	return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
@@ -204,6 +135,7 @@ TyImageView_dealloc(TyImageViewObject* self)
 }
 
 static PyMemberDef TyImageView_members[] = {
+	{ "data", T_OBJECT, offsetof(TyImageViewObject, pyData), READONLY, "Data value" },
 	{ "stretch", T_BOOL, offsetof(TyImageViewObject, bStretch), 0, "Stretch to fit into widget, keeping aspect ratio." },
 	{ "fill", T_BOOL, offsetof(TyImageViewObject, bFill), 0, "Stretch to fit into widget, filling all available space (distorting)." },
 	{ NULL }
@@ -278,26 +210,21 @@ TyImageViewType_Init()
 		PyErr_SetFromWindowsErr(0);
 		return FALSE;
 	}
-	/*
-	hPlaceholderBitmap = (HBITMAP)LoadImage(g->hInstance, MAKEINTRESOURCE(IDB_PLACEHOLDER), IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
-	if (hPlaceholderBitmap == NULL) {
-		PyErr_SetFromWindowsErr(0);
-		return FALSE;
-	}*/
 	return TRUE;
 }
 
 static
-LRESULT CALLBACK TyImageViewWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK TyImageViewWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static int cxClient, cyClient;
 	PAINTSTRUCT paintStruct;
 	HDC hDC;
 	TyImageViewObject* self = (TyImageViewObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
-	switch (msg)
+	switch (uMsg)
 	{
 	case WM_PAINT:
+		//printf("WM_PAINT \n");
 		if (self->pyData && self->pyData != Py_None) {
 			TyImageObject* pyImage = (TyImageObject*)self->pyData;
 			hDC = BeginPaint(hwnd, &paintStruct);
@@ -348,21 +275,19 @@ LRESULT CALLBACK TyImageViewWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 		cyClient = HIWORD(lParam);
 		return 0;
 
-	case WM_QUERYENDSESSION:
-	case WM_CLOSE:
-		printf("Window Closing!\n");
-		if (TRUE)
-			//DestroyWindow(hwnd);
-			break;
-		else
-			return 0;
-
 	case WM_DESTROY:
-		printf("Image Destroyed!\n");
 		if (self != NULL)
 			Py_DECREF(self);
 		return 0;
 	}
-	//return DefFrameProc(hwnd, g.hMDIClientArea, msg, wParam, lParam);
-	return CallWindowProc(self->fnOldWinProcedure, hwnd, msg, wParam, lParam);
+
+	// pick the right DefXxxProcW
+	if (self) {
+		if (PyObject_TypeCheck((PyObject*)self, &TyMdiWindowType))
+			return DefMDIChildProcW(hwnd, uMsg, wParam, lParam);
+		if (PyObject_TypeCheck((PyObject*)self, &TyWindowType) && ((TyWindowObject*)self)->hMdiArea) {
+			return DefFrameProcW(hwnd, ((TyWindowObject*)self)->hMdiArea, uMsg, wParam, lParam);
+		}
+	}
+	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }

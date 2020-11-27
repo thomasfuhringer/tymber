@@ -25,7 +25,7 @@ TyButton_init(TyButtonObject* self, PyObject* args, PyObject* kwds)
 	TyWidget_CalculateRect(self, &rect);
 
 	self->hWin = CreateWindowEx(0, L"BUTTON", L"OK",
-		WS_TABSTOP | WS_CHILD | BS_TEXT | BS_PUSHBUTTON | (self->bVisible ? WS_VISIBLE : 0), // | BS_NOTIFY
+		WS_TABSTOP | WS_CHILD | BS_TEXT | BS_PUSHBUTTON | WS_TABSTOP | (self->bVisible ? WS_VISIBLE : 0), // | BS_NOTIFY
 		rect.left, rect.top, rect.right, rect.bottom,
 		self->hwndParent, (HMENU)IDC_TYBUTTON, g->hInstance, NULL);
 
@@ -161,6 +161,13 @@ TyButtonProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (!TyButton_OnClick(self))
 				PyErr_Print();
 			return 0;
+		}
+		break;
+
+	case WM_KEYDOWN:
+		if (wParam == VK_RETURN) {
+			if (!TyButton_OnClick(self))
+				PyErr_Print();
 		}
 		break;
 

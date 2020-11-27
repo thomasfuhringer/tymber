@@ -92,14 +92,8 @@
 #include "SplitterObject.h"
 #include "TabObject.h"
 #include "ImageViewObject.h"
-/*#include "ComboBoxObject.h"
-#include "TableObject.h"
-*/
-
-/*/ If an error occurred, display the HRESULT and exit.
-#ifndef EXIT_ON_ERROR
-#define EXIT_ON_ERROR(hr) if (FAILED(hr)) { wchar_t error[255]; swprintf_s(error, 254, L"HRESULT = %x", hr); MessageBox(0, error, L"Error, exiting.", 0); exit(1);    }
-#endif*/
+#include "ComboBoxObject.h"
+//#include "TableObject.h"
 
 typedef struct _TyMenuItemObject TyMenuItemObject;
 typedef struct _TyApplicationObject TyApplicationObject;

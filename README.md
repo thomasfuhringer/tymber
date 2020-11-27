@@ -28,3 +28,9 @@ button = ty.Button(app.window, "button", -70, -40, 50, 20, "Close")
 button.on_click = button__on_click
 app.run()
 ```
+
+## Usage
+
+1 Install Python for Windows.
+2 Download the `tymber.pyd` file for your version of Python from the respective subdirectory of `bin` (e.g. `39_64` for Python 3.9, 64 bit).
+3 Put it into the directory of your script and import it.

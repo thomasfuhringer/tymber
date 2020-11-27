@@ -24,11 +24,19 @@ def file_new_menu_item__on_click():
     ty.Entry(splitter.box1, "entry_quotient", 80, 90, -20, 20, data_type=float, format="{:,.2f}").read_only = True
     splitter.box1.entry_dividend.tab_next = splitter.box1.entry_divisor
     splitter.box1.entry_divisor.tab_next = splitter.box1.entry_dividend
-    ty.Button(splitter.box1, "button_divide", -70, -40, -20, 20, "Divide").on_click = button_devide__on_click
+    combo_box_operation = ty.ComboBox(splitter.box1, "combo_box_operation", -170, -40, 70, 22, caption="Divide", data_type = int)
+    combo_box_operation.append("Divide", 1)
+    combo_box_operation.append("Multiply", 2)
+    combo_box_operation.data = 1
+    ty.Button(splitter.box1, "button_calculate", -90, -40, 70, 22, "Caclulate").on_click = button_calculate__on_click
+    combo_box_operation.tab_next = splitter.box1.button_calculate
 
-def button_devide__on_click(button):
+def button_calculate__on_click(button):
     try:
-        button.parent.entry_quotient.data = button.parent.entry_dividend.data / button.parent.entry_divisor.data
+        if button.parent.combo_box_operation.data == 1:
+            button.parent.entry_quotient.data = button.parent.entry_dividend.data / button.parent.entry_divisor.data
+        else:
+            button.parent.entry_quotient.data = button.parent.entry_dividend.data * button.parent.entry_divisor.data
         app.window.status_bar.set_text(None)
     except Exception as exception:
             app.window.status_bar.set_text("Error: " + str(exception))
@@ -37,7 +45,7 @@ def button_devide__on_click(button):
 def about_menu_item__on_click():
     window = ty.Window("About", width=340, height=240)
     ty.Label(window, "line1", 50, 50, -10, 22, "Demonstration of ")
-    ty.Label(window, "line2", 50, 70, -10, 22, "Tymber GUI Library for Python, Version %d.%d" % ty.version_info[:2])
+    ty.Label(window, "line2", 50, 70, -10, 22, "Tymber GUI Library for Python, Version %d.%d.%d" % ty.version_info[:3])
     ty.Label(window, "line3", 50, 90, -10, 22, "Thomas Führinger, 2020 ")
     ty.Label(window, "line4", 50, 110, -10, 22, "Source: github.com/thomasfuhringer/tymber")
     window.run()
