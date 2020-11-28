@@ -29,6 +29,11 @@ button.on_click = button__on_click
 app.run()
 ```
 
+### Screen Shot
+
+![Demo](Screenshot.png)
+
+
 ## Usage
 
 1. Install Python for Windows.
