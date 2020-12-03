@@ -7,6 +7,7 @@ typedef struct _TyEntryObject
 	TyWidgetObject_HEAD
 		PyObject* pyOnLeaveCB;
 	PyObject* pyOnKeyCB;
+	BOOL bPassword;
 }
 TyEntryObject;
 

@@ -41,7 +41,7 @@
 #define IDC_TYBUTTON	       7101
 #define IDC_TYLABEL  	       7102
 #define IDC_TYCOMBOBOX 	       7103
-#define IDC_TYTABLE  	       7104
+#define IDC_TYLISTVIEW         7104
 #define IDC_TYTABLECOL 	       7105
 #define IDC_TYCANVAS  	       7106
 #define IDC_TYENTRY  	       7107
@@ -93,7 +93,7 @@
 #include "TabObject.h"
 #include "ImageViewObject.h"
 #include "ComboBoxObject.h"
-//#include "TableObject.h"
+#include "ListViewObject.h"
 
 typedef struct _TyMenuItemObject TyMenuItemObject;
 typedef struct _TyApplicationObject TyApplicationObject;

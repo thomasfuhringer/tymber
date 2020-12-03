@@ -321,6 +321,7 @@
     <ClCompile Include="MenuObject.c" />
     <ClCompile Include="SplitterObject.c" />
     <ClCompile Include="StatusBarObject.c" />
+    <ClCompile Include="ListViewObject.c" />
     <ClCompile Include="TabObject.c" />
     <ClCompile Include="ToolBarObject.c" />
     <ClCompile Include="Utilities.c" />
@@ -344,6 +345,7 @@
     <ClInclude Include="SplitterObject.h" />
     <ClInclude Include="StatusBar.h" />
     <ClInclude Include="StatusBarObject.h" />
+    <ClInclude Include="ListViewObject.h" />
     <ClInclude Include="TabObject.h" />
     <ClInclude Include="ToolBarObject.h" />
     <ClInclude Include="Tymber.h" />

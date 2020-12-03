@@ -10,6 +10,7 @@ TyEntry_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 	if (self != NULL) {
 		self->pyOnLeaveCB = NULL;
 		self->pyOnKeyCB = NULL;
+		self->bPassword = FALSE;
 		return (PyObject*)self;
 	}
 	else
@@ -129,13 +130,16 @@ TyEntry_Parse(TyEntryObject* self)
 BOOL
 TyEntry_FocusIn(TyEntryObject* self)
 {
-	return TyEntry_RenderData(self, FALSE); // render unformatted
+	if (!self->bReadOnly)
+		return TyEntry_RenderData(self, FALSE); // render unformatted
+	else
+		return TRUE;
 }
 
 BOOL
 TyEntry_FocusOut(TyEntryObject* self)
 {
-	if (!TyEntry_Parse(self)) {
+	if (!self->bReadOnly && !TyEntry_Parse(self)) {
 		if (PyErr_ExceptionMatches(PyExc_ValueError)) {
 			PyErr_Clear();
 			MessageBox(0, L"Invalid Input", L"Error", 0);
@@ -214,6 +218,21 @@ TyEntry_setattro(TyEntryObject* self, PyObject* pyAttributeName, PyObject* pyVal
 			}
 			return 0;
 		}
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "password") == 0) {
+			if (PyBool_Check(pyValue)) {
+				self->bPassword = PyObject_IsTrue(pyValue);
+				if (SendMessage(self->hWin, EM_SETPASSWORDCHAR, self->bPassword ? (WPARAM)L'●' : 0, 0) == 0) {
+					PyErr_SetFromWindowsErr(0);
+					return -1;
+				}
+				return 0;
+			}
+			else {
+				PyErr_SetString(PyExc_TypeError, "Assign a bool!");
+				return -1;
+			}
+			return 0;
+		}
 	}
 	return TyEntryType.tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
 }
@@ -246,6 +265,7 @@ static PyMemberDef TyEntry_members[] = {
 	{ "data", T_OBJECT, offsetof(TyEntryObject, pyData), READONLY, "Data value" },
 	{ "on_leave", T_OBJECT, offsetof(TyEntryObject, pyOnLeaveCB), 0, "Callback, return True if ready for focus to move on." },
 	{ "on_key", T_OBJECT, offsetof(TyEntryObject, pyOnKeyCB), 0, "Callback when key is pressed" },
+	{ "password", T_BOOL, offsetof(TyEntryObject, bPassword), READONLY, "Data value" },
 	{ NULL }
 };
 

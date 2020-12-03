@@ -278,6 +278,9 @@ PyInit_tymber(void)
 	if (PyType_Ready(&TyComboBoxType) < 0)
 		return NULL;
 
+	if (PyType_Ready(&TyListViewType) < 0)
+		return NULL;
+
 	Py_INCREF(&TyApplicationType);
 	Py_INCREF(&TyWindowType);
 	Py_INCREF(&TyMenuType);
@@ -298,6 +301,7 @@ PyInit_tymber(void)
 	Py_INCREF(&TyTabPageType);
 	Py_INCREF(&TyImageViewType);
 	Py_INCREF(&TyComboBoxType);
+	Py_INCREF(&TyListViewType);
 
 	PyModule_AddObject(pyModule, "Application", (PyObject*)&TyApplicationType);
 	PyModule_AddObject(pyModule, "Window", (PyObject*)&TyWindowType);
@@ -319,6 +323,7 @@ PyInit_tymber(void)
 	PyModule_AddObject(pyModule, "TabPage", (PyObject*)&TyTabPageType);
 	PyModule_AddObject(pyModule, "ImageView", (PyObject*)&TyImageViewType);
 	PyModule_AddObject(pyModule, "ComboBox", (PyObject*)&TyComboBoxType);
+	PyModule_AddObject(pyModule, "ListView", (PyObject*)&TyListViewType);
 
 	if (PyDict_SetItemString(TyWidgetType.tp_dict, "default_coordinate", PyLong_FromLong(CW_USEDEFAULT)) == -1)
 		return NULL;

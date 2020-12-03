@@ -144,6 +144,7 @@ TyWidget_SetCaption(TyWidgetObject* self, PyObject* pyText)
 	LPWSTR szText = toW(strText);
 	if (SendMessage(self->hWin, WM_SETTEXT, (WPARAM)0, (LPARAM)szText)) {
 		PyMem_RawFree(szText);
+		TyAttachObject(&self->pyCaption, pyText);
 		return TRUE;
 	}
 	else {
@@ -412,6 +413,7 @@ static PyMemberDef TyWidget_members[] = {
 	{ "parent", T_OBJECT, offsetof(TyWidgetObject, pyParent), READONLY, "Parent widget" },
 	{ "window", T_OBJECT, offsetof(TyWidgetObject, pyWindow), READONLY, "Parent window" },
 	{ "key", T_OBJECT, offsetof(TyWidgetObject, pyKey), READONLY, "Key in parent's child dict" },
+	{ "caption", T_OBJECT, offsetof(TyWidgetObject, pyCaption), READONLY, "Caption text" },
 	{ "tab_next", T_OBJECT, offsetof(TyWidgetObject, pyTabNext), READONLY, "Widget to jump to on tab" },
 	{ "on_changed", T_OBJECT, offsetof(TyWidgetObject, pyOnChangedCB), 0, "Call back when data has changed" },
 	{ "read_only", T_BOOL, offsetof(TyWidgetObject, bReadOnly), READONLY, "Data can not be edited." },
