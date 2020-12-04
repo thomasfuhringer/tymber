@@ -41,3 +41,5 @@ app.run()
 3. Put it into the directory of your script and import it.
 
 In the files `demo.py` and `Lybniz.py` you find examples of application code.
+
+`tymber.rst` contains some documentation.
