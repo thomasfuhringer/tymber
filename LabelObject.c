@@ -207,18 +207,20 @@ TyLabelProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	TyLabelObject* self = (TyLabelObject*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 
-	switch (msg)
-	{
-	case OCM_CTLCOLORSTATIC: {
-		HDC hDC = (HDC)wParam;
-		SetBkMode(hDC, TRANSPARENT);
-		if (self->iTextColor) {
-			SetTextColor(hDC, self->iTextColor);
+	if (self) {
+		switch (msg)
+		{
+		case OCM_CTLCOLORSTATIC: {
+			HDC hDC = (HDC)wParam;
+			SetBkMode(hDC, TRANSPARENT);
+			if (self->iTextColor) {
+				SetTextColor(hDC, self->iTextColor);
+			}
+			return g->hBkgBrush;
 		}
-		return g->hBkgBrush;
-	}
-	default:
-		break;
+		default:
+			break;
+		}
 	}
 	return CallWindowProcW(self->fnOldWinProcedure, hwnd, msg, wParam, lParam);
 }

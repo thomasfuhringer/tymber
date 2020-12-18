@@ -96,7 +96,7 @@ TyMenu_init(TyMenuObject* self, PyObject* args, PyObject* kwds)
 	}
 
 	if (self->pyIcon) {
-		if (!PyObject_TypeCheck(self->pyIcon, &TyImageType)) {
+		if (!PyObject_TypeCheck(self->pyIcon, &TyIconType)) {
 			PyErr_Format(PyExc_TypeError, "Parameter 4 ('icon') must an Image, not '%.200s'.", self->pyIcon->ob_type->tp_name);
 			return -1;
 		}
@@ -270,7 +270,7 @@ TyMenuItem_init(TyMenuItemObject* self, PyObject* args, PyObject* kwds)
 	DrawMenuBar(((TyWindowObject*)TyMenu_GetWindow(self->pyParent))->hWin);
 
 	if (self->pyIcon) {
-		if (!PyObject_TypeCheck(self->pyIcon, &TyImageType)) {
+		if (!PyObject_TypeCheck(self->pyIcon, &TyIconType)) {
 			PyErr_Format(PyExc_TypeError, "Parameter 5 ('icon') must an Image, not '%.200s'.", ((PyObject*)self->pyIcon)->ob_type->tp_name);
 			return -1;
 		}

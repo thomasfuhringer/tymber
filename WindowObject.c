@@ -137,13 +137,17 @@ TyWindow_setattro(TyWindowObject* self, PyObject* pyAttributeName, PyObject* pyV
 		}
 
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "icon") == 0) {
-			if (!PyObject_TypeCheck(pyValue, &TyImageType) || ((TyImageObject*)pyValue)->pyImageFormat != PyObject_GetAttrString(g->pyImageFormatEnum, "ico")) {
-				PyErr_SetString(PyExc_TypeError, "'icon' must be an Image of format icon.");
+			if (pyValue == Py_None) {
+				SendMessageW(self->hWin, WM_SETICON, ICON_SMALL, 0);
+				SendMessageW(self->hWin, WM_SETICON, ICON_BIG, 0);
+			}
+			else if (!PyObject_TypeCheck(pyValue, &TyIconType)) {
+				PyErr_SetString(PyExc_TypeError, "Please assign an 'Icon'!");
 				return -1;
 			}
 			Py_XDECREF(self->pyIcon);
 			Py_INCREF(pyValue);
-			self->pyIcon = (TyImageObject*)pyValue;
+			self->pyIcon = (TyIconObject*)pyValue;
 			SendMessageW(self->hWin, WM_SETICON, ICON_SMALL, (LPARAM)self->pyIcon->hWin);
 			SendMessageW(self->hWin, WM_SETICON, ICON_BIG, (LPARAM)self->pyIcon->hIconLarge);
 			return 0;
@@ -322,131 +326,125 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	PyObject* pyResult = NULL;
 	TyWidgetObject* pyWidget;
-	TyWindowObject* self = (TyWindowObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	WORD wCommandIdentifier;
 
-	switch (uMsg)
-	{
-	case WM_COMMAND:
-		wCommandIdentifier = LOWORD(wParam);
-		if (wCommandIdentifier >= FIRST_CUSTOM_MENU_ID && wCommandIdentifier <= MAX_CUSTOM_MENU_ID) {
-			TyMenuItemObject* pyMenuItem = g->pyaMenuItem[wCommandIdentifier - FIRST_CUSTOM_MENU_ID];
-			if (pyMenuItem->pyOnClickCB && (PyObject_CallObject(pyMenuItem->pyOnClickCB, NULL) == NULL)) {
-				PyErr_Print();
-				return 0;
-			}
-		}
-		switch (HIWORD(wParam))
+	TyWindowObject* self = (TyWindowObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	if (self) {
+		switch (uMsg)
 		{
-		case EN_SETFOCUS:
-			pyWidget = (TyWidgetObject*)GetWindowLongPtr(lParam, GWLP_USERDATA);
-			if (pyWidget && !TyWidget_FocusIn(pyWidget))
-				PyErr_Print();
+		case WM_COMMAND:
+			wCommandIdentifier = LOWORD(wParam);
+			if (wCommandIdentifier >= FIRST_CUSTOM_MENU_ID && wCommandIdentifier <= MAX_CUSTOM_MENU_ID) {
+				TyMenuItemObject* pyMenuItem = g->pyaMenuItem[wCommandIdentifier - FIRST_CUSTOM_MENU_ID];
+				if (pyMenuItem->pyOnClickCB && (PyObject_CallObject(pyMenuItem->pyOnClickCB, NULL) == NULL)) {
+					PyErr_Print();
+					return 0;
+				}
+			}
+			switch (HIWORD(wParam))
+			{
+			case EN_SETFOCUS:
+				pyWidget = (TyWidgetObject*)GetWindowLongPtr(lParam, GWLP_USERDATA);
+				if (pyWidget && !TyWidget_FocusIn(pyWidget))
+					PyErr_Print();
+				break;
+
+			case EN_KILLFOCUS:
+				pyWidget = (TyWidgetObject*)GetWindowLongPtr(lParam, GWLP_USERDATA);
+				//printf("EN_KILLFOCUS %p \n", pyWidget);
+				if (pyWidget && !TyWidget_FocusOut(pyWidget))
+					PyErr_Print();
+			}
 			break;
 
-		case EN_KILLFOCUS:
-			pyWidget = (TyWidgetObject*)GetWindowLongPtr(lParam, GWLP_USERDATA);
-			//printf("EN_KILLFOCUS %p \n", pyWidget);
-			if (pyWidget && !TyWidget_FocusOut(pyWidget))
-				PyErr_Print();
-		}
-		break;
-
-	case WM_GETMINMAXINFO:
-		if (self) {
+		case WM_GETMINMAXINFO:
 			lpMMI = (LPMINMAXINFO)lParam;
 			lpMMI->ptMinTrackSize.x = self->cxMin;
 			lpMMI->ptMinTrackSize.y = self->cyMin;
-		}
-		break;
+			break;
 
-	case WM_SIZE:
-		if (wParam != SIZE_MINIMIZED)
-		{
-			if (self) {
+		case WM_SIZE:
+			if (wParam != SIZE_MINIMIZED)
+			{
 				EnumChildWindows(hwnd, TyWidgetSizeEnumProc, (LPARAM)0);
 				if (!PyObject_TypeCheck((PyObject*)self, &TyMdiWindowType))
 					return 0;
 			}
-		}
-		break;
 
-	case WM_MDIACTIVATE:
-		if (hwnd != wParam) {
-			PyObject* pyOnActivated = ((TyMdiAreaObject*)((TyMdiWindowObject*)self)->pyParent)->pyOnActivatedCB;
-			if (pyOnActivated) {
+			break;
+
+		case WM_MDIACTIVATE:
+			if (hwnd != wParam) {
+				PyObject* pyOnActivated = ((TyMdiAreaObject*)((TyMdiWindowObject*)self)->pyParent)->pyOnActivatedCB;
+				if (pyOnActivated) {
+					PyObject* pyArgs = PyTuple_Pack(1, (PyObject*)self);
+					Py_INCREF(self);
+					PyObject* pyResult = PyObject_CallObject(pyOnActivated, pyArgs);
+					if (pyResult == NULL)
+						return FALSE;
+					Py_DECREF(pyResult);
+				}
+			}
+			break;
+
+		case WM_QUERYENDSESSION:
+		case WM_CLOSE:
+			if (self->pyBeforeCloseCB && self->pyBeforeCloseCB != Py_None) {
 				PyObject* pyArgs = PyTuple_Pack(1, (PyObject*)self);
-				Py_INCREF(self);
-				PyObject* pyResult = PyObject_CallObject(pyOnActivated, pyArgs);
-				if (pyResult == NULL)
-					return FALSE;
-				Py_DECREF(pyResult);
+				PyObject* r = PyObject_CallObject(self->pyBeforeCloseCB, pyArgs);
+				if (r == NULL) {
+					PyErr_Print();
+					return 0;
+				}
+				Py_XDECREF(pyArgs);
+				BOOL bCloseNot = (r == Py_False);
+				Py_XDECREF(r);
+				if (bCloseNot)
+					return 0;
 			}
-		}
-		break;
 
-	case WM_QUERYENDSESSION:
-	case WM_CLOSE:
-		if (self->pyBeforeCloseCB && self->pyBeforeCloseCB != Py_None) {
-			PyObject* pyArgs = PyTuple_Pack(1, (PyObject*)self);
-			PyObject* r = PyObject_CallObject(self->pyBeforeCloseCB, pyArgs);
-			if (r == NULL) {
-				PyErr_Print();
-				return 0;
+			if (self->bModal) {
+				self->bModal = FALSE;
 			}
-			Py_XDECREF(pyArgs);
-			BOOL bCloseNot = (r == Py_False);
-			Py_XDECREF(r);
-			if (bCloseNot)
-				return 0;
-		}
 
-		if (self->bModal) {
-			self->bModal = FALSE;
-		}
+			if (PyObject_TypeCheck(self, &TyMdiWindowType)) {
+				TyMdiAreaObject* pyParent = (TyMdiAreaObject*)((TyMdiWindowObject*)self)->pyParent;
+				PyObject* pyChildren = PyObject_GetAttrString(pyParent, "children");
+				if (PyDict_Contains(pyChildren, ((TyMdiWindowObject*)self)->pyKey) && PyDict_DelItem(pyChildren, ((TyMdiWindowObject*)self)->pyKey) == -1) {
+					PyErr_Print();
+					return 0;
+				}
+				Py_DECREF(pyChildren);
 
-		if (PyObject_TypeCheck(self, &TyMdiWindowType)) {
-			TyMdiAreaObject* pyParent = (TyMdiAreaObject*)((TyMdiWindowObject*)self)->pyParent;
-			PyObject* pyChildren = PyObject_GetAttrString(pyParent, "children");
-			if (PyDict_Contains(pyChildren, ((TyMdiWindowObject*)self)->pyKey) && PyDict_DelItem(pyChildren, ((TyMdiWindowObject*)self)->pyKey) == -1) {
-				PyErr_Print();
-				return 0;
+				PyObject* pyOnActivated = pyParent->pyOnActivatedCB;
+				if (pyOnActivated) {
+					PyObject* pyResult = PyObject_CallFunction(self->pyOnCloseCB, "(O)", Py_None);
+					if (pyResult == NULL)
+						return FALSE;
+					Py_DECREF(pyResult);
+				}
 			}
-			Py_DECREF(pyChildren);
+			else
+				ShowWindow(self->hWin, SW_HIDE);
 
-			PyObject* pyOnActivated = pyParent->pyOnActivatedCB;
-			if (pyOnActivated) {
-				PyObject* pyArgs = PyTuple_Pack(1, Py_None);
-				PyObject* pyResult = PyObject_CallObject(pyOnActivated, pyArgs);
-				if (pyResult == NULL)
-					return FALSE;
-				Py_DECREF(pyResult);
+			if (self->pyOnCloseCB && self->pyOnCloseCB != Py_None) {
+				PyObject* pyResult = PyObject_CallFunction(self->pyOnCloseCB, "(O)", self);
+				if (pyResult == NULL) {
+					PyErr_Print();
+					return 0;
+				}
+				Py_XDECREF(pyResult);
 			}
-		}
-		else
-			ShowWindow(self->hWin, SW_HIDE);
+			return 0;
 
-		if (self->pyOnCloseCB && self->pyOnCloseCB != Py_None) {
-			PyObject* pyArgs = PyTuple_Pack(1, (PyObject*)self);
-			PyObject* r = PyObject_CallObject(self->pyOnCloseCB, pyArgs);
-			if (r == NULL) {
-				PyErr_Print();
-				return 0;
-			}
-			Py_XDECREF(pyArgs);
-			Py_XDECREF(r);
-		}
-		return 0;
+		case WM_DESTROY:
+			//printf("WM_DESTROY\n");
+			return 0;
 
-	case WM_DESTROY:
-		//printf("WM_DESTROY\n");
-		return 0;
-		TyWindowObject* pyWindow = (TyWindowObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-		if (pyWindow != NULL) {
-			pyWindow->hWin = NULL;
-			Py_DECREF(pyWindow);
+			self->hWin = NULL;
+			Py_DECREF(self);
+			return 0;
 		}
-		return 0;
 	}
 	return DefParentProc(hwnd, uMsg, wParam, lParam, self);
 }

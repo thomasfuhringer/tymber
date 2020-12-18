@@ -93,10 +93,10 @@ app = ty.Application(ty.Window("Tymber Demo", width=640, height=480, visible=Fal
 app.window.before_close = window__before_close
 menu = ty.Menu(app, "main", "Main")
 file_menu = ty.Menu(menu, "file", "File")
-file_new_menu_item = ty.MenuItem(file_menu, "new", "New", file_new_menu_item__on_click, ty.Image(ty.StockIcon.file_new))
+file_new_menu_item = ty.MenuItem(file_menu, "new", "New", file_new_menu_item__on_click, ty.Icon(ty.StockIcon.file_new))
 window_menu = ty.Menu(menu, "window", "Window")
 help_menu = ty.Menu(menu, "help", "Help")
-about_menu_item = ty.MenuItem(help_menu, "about", "About...", about_menu_item__on_click, ty.Image(ty.StockIcon.information))
+about_menu_item = ty.MenuItem(help_menu, "about", "About...", about_menu_item__on_click, ty.Icon(ty.StockIcon.information))
 
 tool_bar = ty.ToolBar(app.window)
 tool_bar.append_item(file_new_menu_item)

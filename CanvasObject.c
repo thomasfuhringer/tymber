@@ -2,16 +2,23 @@
 #include "Tymber.h"
 
 static	PAINTSTRUCT ps;
+static	GpStatus status = GenericError;
 
-static PyObject *
+static PyObject*
 TyCanvas_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
 	TyCanvasObject* self = (TyCanvasObject*)type->tp_base->tp_new(type, args, kwds);
 	if (self != NULL) {
-		self->pyOnPaintCB = NULL;
-		self->hDC = 0;
-		self->hPen = 0;
-		self->hBrush = 0;
+		self->iActiveBuffer = 0;
+		self->iLiveBuffer = 0;
+		//self->pyOnPaintCB = NULL;
+		self->pyOnResizeCB = NULL;
+		self->pyOnLMouseUpCB = NULL;
+		self->pyOnLMouseDownCB = NULL;
+		self->pyOnMouseMoveCB = NULL;
+		self->pyOnMouseWheelCB = NULL;
+		self->hDC[0] = 0;
+		self->hDC[1] = 0;
 		return (PyObject*)self;
 	}
 	else
@@ -24,11 +31,10 @@ TyCanvas_init(TyCanvasObject* self, PyObject* args, PyObject* kwds)
 	if (Py_TYPE(self)->tp_base->tp_init((PyObject*)self, args, kwds) < 0)
 		return -1;
 
-	RECT rect;
-	TyWidget_CalculateRect(self, &rect);
+	TyWidget_CalculateRect(self, &self->rcClient);
 	self->hWin = CreateWindowEx(0, L"TyCanvasClass", L"",
 		WS_CHILD | WS_VISIBLE,
-		rect.left, rect.top, rect.right, rect.bottom,
+		self->rcClient.left, self->rcClient.top, self->rcClient.right, self->rcClient.bottom,
 		self->hwndParent, (HMENU)IDC_TYCANVAS, g->hInstance, NULL);
 
 	if (self->hWin == NULL) {
@@ -36,284 +42,444 @@ TyCanvas_init(TyCanvasObject* self, PyObject* args, PyObject* kwds)
 		return -1;
 	}
 
-	SetWindowLongPtr(self->hWin, GWLP_USERDATA, (LONG_PTR)self);
-	if (self->pyCaption != NULL)
-		if (!TyWidget_SetCaption((TyWidgetObject*)self, self->pyCaption))
-			return -1;
-	SendMessage(self->hWin, WM_SETFONT, (WPARAM)g->hfDefaultFont, MAKELPARAM(FALSE, 0));
+	if (!TyCanvas_RenewBuffer(self, 0, self->rcClient.right, self->rcClient.bottom))
+		return -1;
 
+	SelectObject(self->hDC[0], g->hfDefaultFont);
+
+	GdipCreatePen1(MakeARGB(255, 0, 0, 0), 1, UnitPixel, &self->pPen);
+	GdipCreateSolidFill(MakeARGB(255, 0, 0, 0), &self->pBrush);
+	//GdipCreateFontFamilyFromName(L"Arial", NULL, &self->pFontFamily);
+	//GdipCreateFont(self->pFontFamily[0], 18.0, 0, UnitPixel, &self->pFont[0]);
+	status = GdipCreateFontFromDC(self->hDC[self->iActiveBuffer], &self->pFont);
+	if (Ok != status) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot create font.");
+		return -1;
+	}
+	status = GdipStringFormatGetGenericDefault(&self->pStringFormat);
+	if (Ok != status) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot create format.");
+		return -1;
+	}
+
+	SetWindowLongPtr(self->hWin, GWLP_USERDATA, (LONG_PTR)self);
 	return 0;
 }
 
 static PyObject*
-TyCanvas_point(TyCanvasObject* self, PyObject *args)
+TyCanvas_set_pen(TyCanvasObject* self, PyObject* args, PyObject* kwds)
 {
-	int iX, iY;
-	RECT rcClient;
+	int iRed = 0, iGreen = 0, iBlue = 0, iAlpha = 255, iWidth = 1;
+	static char* kwlist[] = { "red", "green", "blue", "alpha","width", NULL };
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iiiii", kwlist,
+		&iRed,
+		&iGreen,
+		&iBlue,
+		&iAlpha,
+		&iWidth))
+		return NULL;
 
-	if (self->hDC == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "This method works only inside an 'on_paint' callback.");
+	GdipDeletePen(self->pPen);
+	GdipDeleteBrush(self->pBrush);
+	GdipCreatePen1(MakeARGB(iAlpha, iRed, iGreen, iBlue), iWidth, UnitPixel, &self->pPen);
+	if (status != Ok) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot create pen.");
+		return NULL;
+	}
+	status = GdipCreateSolidFill(MakeARGB(iAlpha, iRed, iGreen, iBlue), &self->pBrush);
+	if (status != Ok) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot create brush.");
 		return NULL;
 	}
 
-	if (!PyArg_ParseTuple(args, "ii",
-		&iX,
-		&iY))
-		return NULL;
-
-	GetClientRect(self->hWin, &rcClient);
-	if (iX < 0)
-		iX += rcClient.right;
-	if (iY < 0)
-		iY += rcClient.bottom;
-
-	COLORREF c = SetPixel(self->hDC, iX, iY, RGB(1, 1, 1));
-	if (c == 1) {
-		PyErr_SetFromWindowsErr(0);
-		return NULL;
-	}
 	Py_RETURN_NONE;
 }
 
 static PyObject*
-TyCanvas_move_to(TyCanvasObject* self, PyObject *args)
+TyCanvas_ellipse(TyCanvasObject* self, PyObject* args)
 {
-	int iX, iY;
-	RECT rcClient;
-
-	if (self->hDC == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "This method works only inside an 'on_paint' callback.");
-		return NULL;
-	}
-
-	if (!PyArg_ParseTuple(args, "ii",
-		&iX,
-		&iY))
+	int iX1, iY1, iX2, iY2;
+	BOOL bFill = FALSE;
+	if (!PyArg_ParseTuple(args, "iiii|b",
+		&iX1,
+		&iY1,
+		&iX2,
+		&iY2,
+		&bFill))
 		return NULL;
 
-	GetClientRect(self->hWin, &rcClient);
-	if (iX < 0)
-		iX += rcClient.right;
-	if (iY < 0)
-		iY += rcClient.bottom;
-
-	if (MoveToEx(self->hDC, iX, iY, (LPPOINT)NULL) == 0) {
-		PyErr_SetFromWindowsErr(0);
-		return NULL;
-	}
-	Py_RETURN_NONE;
-}
-
-static PyObject*
-TyCanvas_line_to(TyCanvasObject* self, PyObject *args)
-{
-	int iX, iY;
-	RECT rcClient;
-
-	if (self->hDC == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "This method works only inside an 'on_paint' callback.");
-		return NULL;
-	}
-
-	if (!PyArg_ParseTuple(args, "ii",
-		&iX,
-		&iY))
-		return NULL;
-
-	GetClientRect(self->hWin, &rcClient);
-	if (iX < 0)
-		iX += rcClient.right;
-	if (iY < 0)
-		iY += rcClient.bottom;
-
-	if (LineTo(self->hDC, iX, iY) == 0) {
-		PyErr_SetFromWindowsErr(0);
-		return NULL;
-	}
-	Py_RETURN_NONE;
-}
-
-static PyObject*
-TyCanvas_rectangle(TyCanvasObject* self, PyObject *args)
-{
-	RECT rcRel, rcAbs;
-	int iRadius = -1;
-	BOOL bResult;
-
-	if (self->hDC == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "This method works only inside an 'on_paint' callback.");
-		return NULL;
-	}
-
-	if (!PyArg_ParseTuple(args, "iiii|i",
-		&rcRel.left,
-		&rcRel.top,
-		&rcRel.right,
-		&rcRel.bottom,
-		&iRadius))
-		return NULL;
-
-	RECT rcParent;
-	GetClientRect(self->hWin, &rcParent);
-	TransformRectToAbs(rcRel, rcParent, &rcAbs);
-
-	if (iRadius == -1)
-		bResult = Rectangle(self->hDC, rcAbs.left, rcAbs.top, rcAbs.right, rcAbs.bottom);
+	if (bFill)
+		status = GdipFillEllipseI(self->pGraphics[self->iActiveBuffer], self->pBrush, iX1, iY1, iX2, iY2);
 	else
-		bResult = RoundRect(self->hDC, rcAbs.left, rcAbs.top, rcAbs.right, rcAbs.bottom, iRadius, iRadius);
-
-	if (bResult)
-		Py_RETURN_NONE;
-	else {
-		PyErr_SetFromWindowsErr(0);
+		status = GdipDrawEllipseI(self->pGraphics[self->iActiveBuffer], self->pPen, iX1, iY1, iX2, iY2);
+	if (status != Ok) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot draw ellipse.");
 		return NULL;
 	}
+
+	Py_RETURN_NONE;
 }
 
 static PyObject*
-TyCanvas_text(TyCanvasObject* self, PyObject *args)
+TyCanvas_line(TyCanvasObject* self, PyObject* args)
 {
-	int iX, iY;
+	int iX1, iY1, iX2, iY2;
+	if (!PyArg_ParseTuple(args, "iiii",
+		&iX1,
+		&iY1,
+		&iX2,
+		&iY2))
+		return NULL;
+
+	status = GdipDrawLineI(self->pGraphics[self->iActiveBuffer], self->pPen, iX1, iY1, iX2, iY2);
+	if (status != Ok) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot draw line.");
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
+static PyObject*
+TyCanvas_rectangle(TyCanvasObject* self, PyObject* args)
+{
+	int iX1, iY1, iX2, iY2;
+	BOOL bFill = FALSE;
+	if (!PyArg_ParseTuple(args, "iiii|b",
+		&iX1,
+		&iY1,
+		&iX2,
+		&iY2,
+		&bFill))
+		return NULL;
+
+	if (bFill)
+		status = GdipFillRectangleI(self->pGraphics[self->iActiveBuffer], self->pBrush, iX1, iY1, iX2, iY2);
+	else
+		status = GdipDrawRectangleI(self->pGraphics[self->iActiveBuffer], self->pPen, iX1, iY1, iX2, iY2);
+	if (status != Ok) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot draw rectangle.");
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
+static PyObject*
+TyCanvas_text(TyCanvasObject* self, PyObject* args)
+{
+	int iX, iY, iX2, iY2;
 	const LPCSTR strText;
 	LPWSTR szText;
-	RECT rcClient;
 
-	if (self->hDC == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "This method works only inside an 'on_paint' callback.");
-		return NULL;
-	}
-
-	if (!PyArg_ParseTuple(args, "iis",
+	if (!PyArg_ParseTuple(args, "iiiis",
 		&iX,
 		&iY,
+		&iX2,
+		&iY2,
 		&strText))
 		return NULL;
 
-	GetClientRect(self->hWin, &rcClient);
-	if (iX < 0)
-		iX += rcClient.right;
-	if (iY < 0)
-		iY += rcClient.bottom;
-
 	szText = toW(strText);
-	if (TextOut(self->hDC, iX, iY, szText, _tcslen(szText)) == 0) {
-		PyErr_SetFromWindowsErr(0);
+	status = GdipDrawString(self->pGraphics[self->iActiveBuffer], szText, -1, self->pFont, &((GpRectF) { iX, iY, iX2, iY2 }), self->pStringFormat, self->pBrush);
+	if (Ok != status) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot draw string.");
 		return NULL;
 	}
+
 	PyMem_RawFree(szText);
 	Py_RETURN_NONE;
 }
 
 static PyObject*
-TyCanvas_repaint(TyCanvasObject* self)
+TyCanvas_image(TyCanvasObject* self, PyObject* args)
+{
+	int iX, iY, iWidth = 0, iHeight = 0, iOrg;
+	PyObject* pyImage;
+	GpImage* pImage;
+
+	if (!PyArg_ParseTuple(args, "iiO|ii",
+		&iX,
+		&iY,
+		&pyImage,
+		&iWidth,
+		&iHeight))
+		return NULL;
+
+	if (!PyUnicode_Check(pyImage) && !PyBytes_Check(pyImage)) {
+		PyErr_Format(PyExc_TypeError, "Argument 3 must be either a 'str' holding the file name or a 'bytes' object.");
+		return NULL;
+	}
+
+	if (PyUnicode_Check(pyImage)) {
+		LPCSTR strText = PyUnicode_AsUTF8(pyImage);
+		LPWSTR szText = toW(strText);
+		status = GdipLoadImageFromFile(szText, &pImage);
+		PyMem_RawFree(szText);
+	}
+	else if (PyBytes_Check(pyImage)) {
+		IStream* pStream = SHCreateMemStream((BYTE*)PyBytes_AsString(pyImage), PyBytes_GET_SIZE(pyImage));
+		status = GdipLoadImageFromStream(pStream, &pImage);
+		IUnknown_AtomicRelease((void**)&pStream);
+	}
+	if (Ok != status) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot load image.");
+		return NULL;
+	}
+
+	if (iWidth == 0 && iHeight == 0) {
+		GdipDrawImageI(self->pGraphics[self->iActiveBuffer], pImage, iX, iY);
+	}
+	else {
+		UINT uWidth;
+		UINT uHeight;
+		GpBitmap* pImageTmp;
+		double dAspectRatio;
+		double dPictureAspectRatio;
+		int iOffsetX = 0;
+		int iOffsetY = 0;
+
+		GdipGetImageWidth(pImage, &uWidth);
+		GdipGetImageHeight(pImage, &uHeight);
+		dPictureAspectRatio = (double)uWidth / uHeight;
+
+		if (iWidth == 0) {
+			iWidth = uWidth * iHeight / uHeight;
+		}
+		else if (iHeight == 0) {
+			iHeight = uHeight * iWidth / uWidth;
+		}
+		else {
+			dAspectRatio = (double)iWidth / iHeight;
+			if (dPictureAspectRatio > dAspectRatio)
+			{
+				iOrg = iHeight;
+				iHeight = (int)(iWidth / dPictureAspectRatio);
+				iOffsetY = (iOrg - iHeight) / 2;
+			}
+			else if (dPictureAspectRatio < dAspectRatio)
+			{
+				iOrg = iWidth;
+				iWidth = (int)(iHeight * dPictureAspectRatio);
+				iOffsetX = (iOrg - iWidth) / 2;
+			}
+		}
+
+		GpImageAttributes* pImageAttributes;
+		GdipCreateImageAttributes(&pImageAttributes);
+		GdipDrawImageRectRectI(self->pGraphics[self->iActiveBuffer], pImage, iX + iOffsetX, iY + iOffsetY, iWidth, iHeight,
+			0, 0, uWidth, uHeight, UnitPixel, pImageAttributes, NULL, NULL);
+		GdipDisposeImageAttributes(pImageAttributes);
+	}
+	GdipDisposeImage(pImage);
+	Py_RETURN_NONE;
+}
+
+static BOOL
+TyCanvas_DeleteBuffer(TyCanvasObject* self, int iBuffer)
+{
+	if (self->hDC[iBuffer]) {
+		status = GdipDeleteGraphics(self->pGraphics[iBuffer]);
+		if (Ok != status) {
+			PyErr_Format(PyExc_TypeError, "Cannot delete Graphics.");
+			return NULL;
+		}
+
+		if (!DeleteDC(self->hDC[iBuffer]) || !DeleteObject(self->hBM[iBuffer])) {
+			PyErr_SetFromWindowsErr(0);
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+
+static BOOL
+TyCanvas_RenewBuffer(TyCanvasObject* self, int iBuffer, int iWidth, int iHeight)
+{
+	if (!TyCanvas_DeleteBuffer(self, iBuffer))
+		return FALSE;
+
+	Graphics pGraphicsOld;
+	HBITMAP hOld;
+
+	HDC hDC = GetDC(self->hWin);
+	self->hBM[iBuffer] = CreateCompatibleBitmap(hDC, iWidth, iHeight);
+	self->hDC[iBuffer] = CreateCompatibleDC(hDC);
+	SelectObject(self->hDC[iBuffer], self->hBM[iBuffer]);
+	BitBlt(self->hDC[iBuffer], 0, 0, iWidth, iHeight, NULL, 0, 0, WHITENESS);
+	GdipCreateFromHDC(self->hDC[iBuffer], &self->pGraphics[iBuffer]);
+	ReleaseDC(self->hWin, hDC);
+	return TRUE;
+}
+
+
+static PyObject*
+TyCanvas_renew_buffer(TyCanvasObject* self, PyObject* args)
+{
+	int iBuffer = self->iActiveBuffer;
+	int iWidth = self->rcClient.right, iHeight = self->rcClient.bottom;
+	if (!PyArg_ParseTuple(args, "|iii",
+		&iBuffer,
+		&iWidth,
+		&iHeight))
+		return NULL;
+
+	if (!TyCanvas_RenewBuffer(self, iBuffer, iWidth, iHeight))
+		return NULL;
+	Py_RETURN_NONE;
+}
+
+static PyObject*
+TyCanvas_resize_buffer(TyCanvasObject* self, PyObject* args)
+{
+	int iBuffer = self->iActiveBuffer;
+	int iWidth = self->rcClient.right, iHeight = self->rcClient.bottom, iX = 0, iY = 0;
+	if (!PyArg_ParseTuple(args, "|iiiii",
+		&iBuffer,
+		&iWidth,
+		&iHeight,
+		&iX,
+		&iY))
+		return NULL;
+
+	if (self->hDC[iBuffer] == 0) {
+		if (!TyCanvas_RenewBuffer(self, iBuffer, iWidth, iHeight)) {
+			return NULL;
+		}
+	}
+	else {
+		status = GdipDeleteGraphics(self->pGraphics[iBuffer]);
+		if (Ok != status) {
+			PyErr_Format(PyExc_TypeError, "Cannot delete Graphics.");
+			return NULL;
+		}
+
+		HBITMAP hBmOld = self->hBM[iBuffer];
+		HDC hDcOld = self->hDC[iBuffer];
+		HDC hDC = GetDC(self->hWin);
+		self->hBM[iBuffer] = CreateCompatibleBitmap(hDC, iWidth, iHeight);
+		self->hDC[iBuffer] = CreateCompatibleDC(hDC);
+		SelectObject(self->hDC[iBuffer], self->hBM[iBuffer]);
+		BitBlt(self->hDC[iBuffer], 0, 0, iWidth, iHeight, NULL, 0, 0, WHITENESS);
+		BitBlt(self->hDC[iBuffer], iX, iY, iWidth, iHeight, hDcOld, 0, 0, SRCCOPY);
+
+		GdipCreateFromHDC(self->hDC[iBuffer], &self->pGraphics[iBuffer]);
+		ReleaseDC(self->hWin, hDC);
+
+		if (!DeleteDC(hDcOld) || !DeleteObject(hBmOld)) {
+			PyErr_SetFromWindowsErr(0);
+			return NULL;
+		}
+	}
+	Py_RETURN_NONE;
+}
+
+static PyObject*
+TyCanvas_copy_buffer(TyCanvasObject* self, PyObject* args)
+{
+	int iBuffer1, iBuffer2;
+	if (!PyArg_ParseTuple(args, "ii",
+		&iBuffer1,
+		&iBuffer2))
+		return NULL;
+
+	if (self->hDC[iBuffer1] == 0) {
+		PyErr_SetString(PyExc_IndexError, "Source buffer is still empty.");
+		return NULL;
+	}
+
+	// Initialize buffer if it is not yet
+	if (self->hDC[iBuffer2] == 0 && !TyCanvas_RenewBuffer(self, iBuffer2, self->rcClient.right, self->rcClient.bottom))
+		return NULL;
+
+	BITMAP BitMap1, BitMap2;
+	GetObject(self->hBM[iBuffer1], sizeof(BITMAP), (LPVOID)&BitMap1);
+	GetObject(self->hBM[iBuffer2], sizeof(BITMAP), (LPVOID)&BitMap2);
+
+	BitBlt(self->hDC[iBuffer2], 0, 0, BitMap2.bmWidth, BitMap2.bmHeight, NULL, 0, 0, WHITENESS);
+	BitBlt(self->hDC[iBuffer2], 0, 0, BitMap1.bmWidth, BitMap1.bmHeight, self->hDC[iBuffer1], 0, 0, SRCCOPY);
+
+	Py_RETURN_NONE;
+}
+
+static PyObject*
+TyCanvas_clear_buffer(TyCanvasObject* self, PyObject* args)
+{
+	int iBuffer = self->iActiveBuffer;
+	if (!PyArg_ParseTuple(args, "|i",
+		&iBuffer))
+		return NULL;
+
+	if (self->hDC[iBuffer] == 0) {
+		if (!TyCanvas_RenewBuffer(self, iBuffer, self->rcClient.right, self->rcClient.bottom)) {
+			return NULL;
+		}
+	}
+	else {
+		BITMAP BitMap;
+		GetObject(self->hBM[iBuffer], sizeof(BITMAP), (LPVOID)&BitMap);
+		BitBlt(self->hDC[iBuffer], 0, 0, BitMap.bmWidth, BitMap.bmHeight, NULL, 0, 0, WHITENESS);
+	}
+	Py_RETURN_NONE;
+}
+
+static PyObject*
+TyCanvas_refresh(TyCanvasObject* self)
 {
 	RedrawWindow(self->hWin, 0, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
 	Py_RETURN_NONE;
 }
 
 static int
-TyCanvas_setattro(TyCanvasObject* self, PyObject* pyAttributeName, PyObject *pyValue)
+TyCanvas_setattro(TyCanvasObject* self, PyObject* pyAttributeName, PyObject* pyValue)
 {
 	if (PyUnicode_Check(pyAttributeName)) {
-		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "on_paint") == 0) {
-			if (PyCallable_Check(pyValue)) {
-				Py_XINCREF(pyValue);
-				Py_XDECREF(self->pyOnPaintCB);
-				self->pyOnPaintCB = pyValue;
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "active_buffer") == 0) {
+			if (PyLong_Check(pyValue)) {
+				int iIndex = PyLong_Check(pyValue);
+				if (iIndex < 0 || iIndex >= MAX_PIXBUFFERS) {
+					PyErr_SetString(PyExc_IndexError, "Index out of range.");
+					return -1;
+				}
+
+				if (self->hDC[iIndex] == 0 && !TyCanvas_RenewBuffer(self, iIndex, self->rcClient.right, self->rcClient.bottom))
+					return -1;
+				self->iActiveBuffer = iIndex;
 				return 0;
 			}
 			else {
-				PyErr_SetString(PyExc_TypeError, "Parameter must be callable");
+				PyErr_SetString(PyExc_TypeError, "PLease assign an int specifying the index of the buffer.");
 				return -1;
 			}
 		}
-		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "text_color") == 0) {
-			if (PyTuple_Check(pyValue)) {
-				if (self->hDC == 0) {
-					PyErr_SetString(PyExc_RuntimeError, "text_color can only be assigned inside an 'on_paint' callback.");
+
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "live_buffer") == 0) {
+			if (PyLong_Check(pyValue)) {
+				int iIndex = PyLong_Check(pyValue);
+				if (iIndex < 0 || iIndex >= MAX_PIXBUFFERS) {
+					PyErr_SetString(PyExc_IndexError, "Index out of range.");
 					return -1;
 				}
-				int iR, iG, iB;
-				PyObject* pyColorComponent = PyTuple_GetItem(pyValue, 0);
-				if (pyColorComponent == NULL)
-					return -1;
-				iR = PyLong_AsLong(pyColorComponent);
-				pyColorComponent = PyTuple_GetItem(pyValue, 1);
-				if (pyColorComponent == NULL)
-					return -1;
-				iG = PyLong_AsLong(pyColorComponent);
-				pyColorComponent = PyTuple_GetItem(pyValue, 2);
-				if (pyColorComponent == NULL)
-					return -1;
-				iB = PyLong_AsLong(pyColorComponent);
 
-				SetTextColor(self->hDC, RGB(iR, iG, iB));
+				if (self->hDC[iIndex] == 0 && !TyCanvas_RenewBuffer(self, iIndex, self->rcClient.right, self->rcClient.bottom))
+					return -1;
+				self->iLiveBuffer = iIndex;
 				return 0;
 			}
 			else {
-				PyErr_SetString(PyExc_TypeError, "Assign a tuple of RGB values!");
+				PyErr_SetString(PyExc_TypeError, "PLease assign an int specifying the index of the buffer.");
 				return -1;
 			}
 		}
-		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "pen_color") == 0) {
-			if (PyTuple_Check(pyValue)) {
-				if (self->hDC == 0) {
-					PyErr_SetString(PyExc_RuntimeError, "pen_color can only be assigned inside an 'on_paint' callback.");
-					return -1;
-				}
-				int iR, iG, iB;
-				PyObject* pyColorComponent = PyTuple_GetItem(pyValue, 0);
-				if (pyColorComponent == NULL)
-					return -1;
-				iR = PyLong_AsLong(pyColorComponent);
-				pyColorComponent = PyTuple_GetItem(pyValue, 1);
-				if (pyColorComponent == NULL)
-					return -1;
-				iG = PyLong_AsLong(pyColorComponent);
-				pyColorComponent = PyTuple_GetItem(pyValue, 2);
-				if (pyColorComponent == NULL)
-					return -1;
-				iB = PyLong_AsLong(pyColorComponent);
 
-				if (self->hPen)
-					DeleteObject(self->hPen);
-				self->hPen = CreatePen(PS_SOLID, 1, RGB(iR, iG, iB));
-				SelectObject(self->hDC, self->hPen);
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "anti_alias") == 0) {
+			if (PyBool_Check(pyValue)) {
+				GdipSetSmoothingMode(self->pGraphics[self->iActiveBuffer], pyValue == Py_True ? SmoothingModeAntiAlias : SmoothingModeNone);
 				return 0;
 			}
 			else {
-				PyErr_SetString(PyExc_TypeError, "Assign a tuple of RGB values!");
-				return -1;
-			}
-		}
-		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "fill_color") == 0) {
-			if (PyTuple_Check(pyValue)) {
-				if (self->hDC == 0) {
-					PyErr_SetString(PyExc_RuntimeError, "fill_color can only be assigned inside an 'on_paint' callback.");
-					return -1;
-				}
-				int iR, iG, iB;
-				PyObject* pyColorComponent = PyTuple_GetItem(pyValue, 0);
-				if (pyColorComponent == NULL)
-					return -1;
-				iR = PyLong_AsLong(pyColorComponent);
-				pyColorComponent = PyTuple_GetItem(pyValue, 1);
-				if (pyColorComponent == NULL)
-					return -1;
-				iG = PyLong_AsLong(pyColorComponent);
-				pyColorComponent = PyTuple_GetItem(pyValue, 2);
-				if (pyColorComponent == NULL)
-					return -1;
-				iB = PyLong_AsLong(pyColorComponent);
-
-				if (self->hBrush)
-					DeleteObject(self->hBrush);
-				self->hBrush = CreateSolidBrush(RGB(iR, iG, iB));
-				SelectObject(self->hDC, self->hBrush);
-				return 0;
-			}
-			else {
-				PyErr_SetString(PyExc_TypeError, "Assign a tuple of RGB values!");
+				PyErr_SetString(PyExc_TypeError, "Assign a bool!");
 				return -1;
 			}
 		}
@@ -321,16 +487,13 @@ TyCanvas_setattro(TyCanvasObject* self, PyObject* pyAttributeName, PyObject *pyV
 	return Py_TYPE(self)->tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
 }
 
-static PyObject *
+static PyObject*
 TyCanvas_getattro(TyCanvasObject* self, PyObject* pyAttributeName)
 {
 	PyObject* pyResult;
 	pyResult = PyObject_GenericGetAttr((PyObject*)self, pyAttributeName);
 	if (pyResult == NULL && PyErr_ExceptionMatches(PyExc_AttributeError) && PyUnicode_Check(pyAttributeName)) {
-		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "on_click") == 0) {
-			PyErr_Clear();
-			return self->pyOnPaintCB;
-		}
+
 	}
 	Py_XDECREF(pyResult);
 	return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
@@ -339,20 +502,47 @@ TyCanvas_getattro(TyCanvasObject* self, PyObject* pyAttributeName)
 static void
 TyCanvas_dealloc(TyCanvasObject* self)
 {
-	Py_TYPE(self)->tp_base->tp_dealloc((PyObject *)self);
+	if (!TyCanvas_DeleteBuffer(self, 0)) {
+		PyErr_SetFromWindowsErr(0);
+		PyErr_Print();
+	};
+	if (!TyCanvas_DeleteBuffer(self, 1)) {
+		PyErr_SetFromWindowsErr(0);
+		PyErr_Print();
+	};
+
+	GdipDeleteStringFormat(self->pStringFormat);
+	GdipDeleteFont(self->pFont);
+	GdipDeleteFontFamily(self->pFontFamily);
+	GdipDeletePen(self->pPen);
+	GdipDeleteBrush(self->pBrush);
+	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
 }
 
 static PyMemberDef TyCanvas_members[] = {
+	{ "active_buffer", T_INT, offsetof(TyCanvasObject, iActiveBuffer), READONLY, "Index of the bitmap buffer drawing operations work on" },
+	{ "live_buffer", T_INT, offsetof(TyCanvasObject, iLiveBuffer), READONLY, "Index of the bitmap buffer that is displayed when the widget gets repainted by the OS" },
+	{ "on_mouse_move", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnMouseMoveCB), 0, "On mouse move callback" },
+	{ "on_mouse_wheel", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnMouseWheelCB), 0, "On mouse wheel rotated callback" },
+	{ "on_l_button_down", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnLMouseDownCB), 0, "On left mouse button down callback" },
+	{ "on_l_button_up", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnLMouseUpCB), 0, "On left mouse button up callback" },
+	//{ "on_paint", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnPaintCB), 0, "Callback when (part of the) widget is repainted" },
+	{ "on_resize", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnResizeCB), 0, "Callback when size changed" },
 	{ NULL }
 };
 
 static PyMethodDef TyCanvas_methods[] = {
-	{ "point", (PyCFunction)TyCanvas_point, METH_VARARGS, "Draws a point." },
-	{ "move_to", (PyCFunction)TyCanvas_move_to, METH_VARARGS, "Moves to a point." },
-	{ "line_to", (PyCFunction)TyCanvas_line_to, METH_VARARGS, "Draws a line." },
+	{ "set_pen", (PyCFunction)TyCanvas_set_pen, METH_VARARGS | METH_KEYWORDS, "Sets RGBA color and thickness of pen." },
+	{ "ellipse", (PyCFunction)TyCanvas_ellipse, METH_VARARGS, "Draws a point." },
+	{ "line", (PyCFunction)TyCanvas_line, METH_VARARGS, "Draws a line." },
 	{ "rectangle", (PyCFunction)TyCanvas_rectangle, METH_VARARGS, "Draws a rectangle." },
 	{ "text", (PyCFunction)TyCanvas_text, METH_VARARGS, "Draws a text string." },
-	{ "repaint", (PyCFunction)TyCanvas_repaint, METH_NOARGS, "Trigger the paint process." },
+	{ "image", (PyCFunction)TyCanvas_image, METH_VARARGS, "Places a bitmap." },
+	{ "renew_buffer", (PyCFunction)TyCanvas_renew_buffer, METH_VARARGS, "Creates a new buffer." },
+	{ "resize_buffer", (PyCFunction)TyCanvas_resize_buffer, METH_VARARGS, "Adjusts the size of the buffer." },
+	{ "copy_buffer", (PyCFunction)TyCanvas_copy_buffer, METH_VARARGS, "Copy bitmap data from one buffer do the other." },
+	{ "clear_buffer", (PyCFunction)TyCanvas_clear_buffer, METH_VARARGS, "Paint the buffer white." },
+	{ "refresh", (PyCFunction)TyCanvas_refresh, METH_NOARGS, "Trigger the paint process." },
 	{ NULL }
 };
 
@@ -403,7 +593,7 @@ BOOL TyCanvasType_Init()
 {
 	WNDCLASSEX wc;
 	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.style = 0;// CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc = TyCanvasWndProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
@@ -425,39 +615,95 @@ BOOL TyCanvasType_Init()
 static
 LRESULT CALLBACK TyCanvasWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	PyObject* pyResult;
+	HDC hDC;
+	RECT rect;
+
 	TyCanvasObject* self = (TyCanvasObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-	switch (uMsg)
-	{
-
-	case WM_PAINT:
-	{
-		if (self->pyOnPaintCB) {
-			self->hDC = BeginPaint(self->hWin, &ps);
-			SelectObject(self->hDC, g->hfDefaultFont);
-			SetBkMode(self->hDC, TRANSPARENT);
-			PyObject* pyArgs = PyTuple_Pack(1, (PyObject*)self);
-			Py_INCREF(self);
-			PyObject* pyResult = PyObject_CallObject(self->pyOnPaintCB, pyArgs);
-			//ReleaseDC (self->hWin, self->hDC); 
-			EndPaint(self->hWin, &ps);
-			self->hDC = 0;
-			if (pyResult == NULL) {
-				PyErr_Print();
-				MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
-			}
-			else {
-				Py_DECREF(pyResult);
-			}
-		}
-		return 0;
-	}
-
-	case WM_SIZE:
-		return 0;		
-	}
-
-	// pick the right DefXxxProcW
 	if (self) {
+		switch (uMsg)
+		{
+
+		case WM_PAINT:
+		{
+			// Swap in the live buffer
+			hDC = BeginPaint(self->hWin, &ps);
+			SetBkMode(hDC, TRANSPARENT);
+			BitBlt(hDC, 0, 0, self->rcClient.right, self->rcClient.bottom, self->hDC[self->iLiveBuffer], 0, 0, SRCCOPY);
+			EndPaint(self->hWin, &ps);
+
+			return 0;
+		}
+
+		case WM_SIZE:
+			GetClientRect(self->hWin, &self->rcClient);
+			if (self->pyOnResizeCB) {
+				pyResult = PyObject_CallFunction(self->pyOnResizeCB, "(O)", self);
+				if (pyResult == NULL) {
+					PyErr_Print();
+					//MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+				}
+				else Py_DECREF(pyResult);
+			}
+			break;
+
+		case WM_ERASEBKGND:
+			return 1;
+
+		case WM_LBUTTONDOWN:
+			if (self->pyOnLMouseDownCB) {
+				pyResult = PyObject_CallFunction(self->pyOnLMouseDownCB, "(Oii)", self, LOWORD(lParam), HIWORD(lParam));
+				if (pyResult == NULL) {
+					PyErr_Print();
+					MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+				}
+				else
+					Py_DECREF(pyResult);
+			}
+			return 0L;
+
+		case WM_LBUTTONUP:
+			if (self->pyOnLMouseUpCB) {
+				pyResult = PyObject_CallFunction(self->pyOnLMouseUpCB, "(Oii)", self, LOWORD(lParam), HIWORD(lParam));
+				if (pyResult == NULL) {
+					PyErr_Print();
+					MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+				}
+				else
+					Py_DECREF(pyResult);
+			}
+			return 0L;
+
+		case WM_MOUSEMOVE:
+			if (self->pyOnMouseMoveCB) {
+				pyResult = PyObject_CallFunction(self->pyOnMouseMoveCB, "(Oii)", self, LOWORD(lParam), HIWORD(lParam));
+				if (pyResult == NULL) {
+					PyErr_Print();
+					MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+				}
+				else
+					Py_DECREF(pyResult);
+			}
+			return 0L;
+
+		case WM_MOUSEWHEEL:
+			if (self->pyOnMouseWheelCB) {
+				POINT pt;
+				pt.x = GET_X_LPARAM(lParam);
+				pt.y = GET_Y_LPARAM(lParam);
+				ScreenToClient(hwnd, &pt);
+				pyResult = PyObject_CallFunction(self->pyOnMouseWheelCB, "(Oiii)", self, GET_WHEEL_DELTA_WPARAM(wParam), pt.x, pt.y);
+				if (pyResult == NULL) {
+					PyErr_Print();
+					MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+				}
+				else
+					Py_DECREF(pyResult);
+			}
+			return 0L;
+		}
+
+		// pick the right DefXxxProcW
 		if (PyObject_TypeCheck((PyObject*)self, &TyMdiWindowType))
 			return DefMDIChildProcW(hwnd, uMsg, wParam, lParam);
 		if (PyObject_TypeCheck((PyObject*)self, &TyWindowType) && ((TyWindowObject*)self)->hMdiArea) {

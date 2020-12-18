@@ -17,7 +17,7 @@ TyMenuObject;
 extern PyTypeObject TyMenuType;
 
 
-typedef struct _TyImageObject TyImageObject;
+typedef struct _TyIconObject TyIconObject;
 typedef struct _TyToolBarObject TyToolBarObject;
 typedef struct _TyMenuItemObject
 {
@@ -27,7 +27,7 @@ typedef struct _TyMenuItemObject
 	PyObject* pyKey;
 	PyObject* pyCaption;
 	PyObject* pyOnClickCB;
-	TyImageObject* pyIcon;
+	TyIconObject* pyIcon;
 	TyToolBarObject* pyToolBar;
 }
 TyMenuItemObject;

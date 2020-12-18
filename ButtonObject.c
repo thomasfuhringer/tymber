@@ -151,28 +151,29 @@ static LRESULT CALLBACK
 TyButtonProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	TyButtonObject* self = (TyButtonObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-
-	switch (msg)
-	{
-	case OCM_COMMAND:
-		switch (HIWORD(wParam))
+	if (self) {
+		switch (msg)
 		{
-		case BN_CLICKED:
-			if (!TyButton_OnClick(self))
-				PyErr_Print();
-			return 0;
-		}
-		break;
+		case OCM_COMMAND:
+			switch (HIWORD(wParam))
+			{
+			case BN_CLICKED:
+				if (!TyButton_OnClick(self))
+					PyErr_Print();
+				return 0;
+			}
+			break;
 
-	case WM_KEYDOWN:
-		if (wParam == VK_RETURN) {
-			if (!TyButton_OnClick(self))
-				PyErr_Print();
-		}
-		break;
+		case WM_KEYDOWN:
+			if (wParam == VK_RETURN) {
+				if (!TyButton_OnClick(self))
+					PyErr_Print();
+			}
+			break;
 
-	default:
-		break;
+		default:
+			break;
+		}
 	}
 	return CallWindowProc(self->fnOldWinProcedure, hwnd, msg, wParam, lParam);
 }

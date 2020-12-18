@@ -11,10 +11,41 @@ TyEntry_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 		self->pyOnLeaveCB = NULL;
 		self->pyOnKeyCB = NULL;
 		self->bPassword = FALSE;
+		self->bMultiline = FALSE;
 		return (PyObject*)self;
 	}
 	else
 		return NULL;
+}
+
+
+BOOL
+TyEntry_CreateEditControl(TyEntryObject* self)
+{
+	RECT rect;
+	TyWidget_CalculateRect(self, &rect);
+
+	int iAlignment = (self->pyDataType == &PyUnicode_Type) ? 0 : ES_RIGHT;
+
+	self->hWin = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"",
+		WS_CHILD | WS_TABSTOP | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | iAlignment | (self->bVisible ? WS_VISIBLE : 0) | (self->bMultiline ? ES_MULTILINE : 0),
+		rect.left, rect.top, rect.right, rect.bottom,
+		self->hwndParent, (HMENU)IDC_TYENTRY, g->hInstance, NULL);
+
+	if (self->hWin == NULL) {
+		PyErr_SetFromWindowsErr(0);
+		return FALSE;
+	}
+
+	SetWindowLongPtr(self->hWin, GWLP_USERDATA, (LONG_PTR)self);
+	self->fnOldWinProcedure = (WNDPROC)SetWindowLongPtrW(self->hWin, GWLP_WNDPROC, (LONG_PTR)TyEntryProc);
+	if (self->pyCaption != NULL)
+		if (!TyWidget_SetCaption((TyWidgetObject*)self, self->pyCaption))
+			return FALSE;
+	SendMessage(self->hWin, WM_SETFONT, (WPARAM)g->hfDefaultFont, MAKELPARAM(FALSE, 0));
+	TyEntry_Parse(self);
+
+	return TRUE;
 }
 
 static int
@@ -23,28 +54,9 @@ TyEntry_init(TyEntryObject* self, PyObject* args, PyObject* kwds)
 	if (Py_TYPE(self)->tp_base->tp_init((PyObject*)self, args, kwds) < 0)
 		return -1;
 
-	RECT rect;
-	TyWidget_CalculateRect(self, &rect);
-
-	int iAlignment = (self->pyDataType == &PyUnicode_Type) ? 0 : ES_RIGHT;
-
-	self->hWin = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"",
-		WS_CHILD | WS_TABSTOP | ES_AUTOVSCROLL | ES_AUTOHSCROLL | iAlignment | (self->bVisible ? WS_VISIBLE : 0), //| ES_MULTILINE | ES_WANTRETURN
-		rect.left, rect.top, rect.right, rect.bottom,
-		self->hwndParent, (HMENU)IDC_TYENTRY, g->hInstance, NULL);
-
-	if (self->hWin == NULL) {
-		PyErr_SetFromWindowsErr(0);
+	if (!TyEntry_CreateEditControl(self, FALSE) < 0)
 		return -1;
-	}
 
-	SetWindowLongPtr(self->hWin, GWLP_USERDATA, (LONG_PTR)self);
-	self->fnOldWinProcedure = (WNDPROC)SetWindowLongPtrW(self->hWin, GWLP_WNDPROC, (LONG_PTR)TyEntryProc);
-	if (self->pyCaption != NULL)
-		if (!TyWidget_SetCaption((TyWidgetObject*)self, self->pyCaption))
-			return -1;
-	SendMessage(self->hWin, WM_SETFONT, (WPARAM)g->hfDefaultFont, MAKELPARAM(FALSE, 0));
-	TyEntry_Parse(self);
 	return 0;
 }
 
@@ -233,6 +245,22 @@ TyEntry_setattro(TyEntryObject* self, PyObject* pyAttributeName, PyObject* pyVal
 			}
 			return 0;
 		}
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "multiline") == 0) {
+			if (PyBool_Check(pyValue)) {
+				self->bMultiline = PyObject_IsTrue(pyValue);
+				DestroyWindow(self->hWin);
+				if (!TyEntry_CreateEditControl(self) < 0) {
+					PyErr_SetFromWindowsErr(0);
+					return -1;
+				}
+				return 0;
+			}
+			else {
+				PyErr_SetString(PyExc_TypeError, "Assign a bool!");
+				return -1;
+			}
+			return 0;
+		}
 	}
 	return TyEntryType.tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
 }
@@ -266,6 +294,7 @@ static PyMemberDef TyEntry_members[] = {
 	{ "on_leave", T_OBJECT, offsetof(TyEntryObject, pyOnLeaveCB), 0, "Callback, return True if ready for focus to move on." },
 	{ "on_key", T_OBJECT, offsetof(TyEntryObject, pyOnKeyCB), 0, "Callback when key is pressed" },
 	{ "password", T_BOOL, offsetof(TyEntryObject, bPassword), READONLY, "Data value" },
+	{ "multiline", T_BOOL, offsetof(TyEntryObject, bMultiline), READONLY, "Allow multiple lines (and CR)" },
 	{ NULL }
 };
 
@@ -322,39 +351,41 @@ TyEntryProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	TyEntryObject* self = (TyEntryObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	PyObject* pyKey;
 
-	switch (msg)
-	{
-	case WM_KEYDOWN:
-		//printf("WM_KEYDOWN %p \n", wParam);
-		if (self->pyOnKeyCB) {
-			pyKey = PyObject_CallFunction(g->pyKeyEnum, "(i)", wParam);
-			if (pyKey != NULL) {
-				PyObject* pyResult = PyObject_CallFunction(self->pyOnKeyCB, "(OO)", pyKey, self);
-				if (pyResult == NULL)
-					PyErr_Print();
-				else
-					Py_DECREF(pyResult);
-				Py_DECREF(pyKey);
-			}
-			else
-				PyErr_Clear();
-		}
-
-		if (wParam == VK_TAB && self->pyTabNext) {
-			if (TyEntry_FocusOut(self)) {
-				TyWidget_FocusTo(self->pyTabNext);
-			}
-		}
-		/*switch (wParam)
+	if (self) {
+		switch (msg)
 		{
-		case VK_RETURN:
-			printf("VK_RETURN %p \n", self);
-			break;
-		}*/
-		break;
+		case WM_KEYDOWN:
+			//printf("WM_KEYDOWN %p \n", wParam);
+			if (self->pyOnKeyCB) {
+				pyKey = PyObject_CallFunction(g->pyKeyEnum, "(i)", wParam);
+				if (pyKey != NULL) {
+					PyObject* pyResult = PyObject_CallFunction(self->pyOnKeyCB, "(OO)", pyKey, self);
+					if (pyResult == NULL)
+						PyErr_Print();
+					else
+						Py_DECREF(pyResult);
+					Py_DECREF(pyKey);
+				}
+				else
+					PyErr_Clear();
+			}
 
-	default:
-		break;
+			if (wParam == VK_TAB && self->pyTabNext) {
+				if (TyEntry_FocusOut(self)) {
+					TyWidget_FocusTo(self->pyTabNext);
+				}
+			}
+			/*switch (wParam)
+			{
+			case VK_RETURN:
+				printf("VK_RETURN %p \n", self);
+				break;
+			}*/
+			break;
+
+		default:
+			break;
+		};
 	}
 	return CallWindowProc(self->fnOldWinProcedure, hwnd, msg, wParam, lParam);
 }

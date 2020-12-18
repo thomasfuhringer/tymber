@@ -21,7 +21,7 @@
 		PyObject* pyBeforeCloseCB; \
 		PyObject* pyOnCloseCB;
 
-typedef struct _TyImageObject TyImageObject;
+typedef struct _TyIconObject TyIconObject;
 typedef struct _TyWindowObject
 {
 	TyWindowObject_HEAD
@@ -30,7 +30,7 @@ typedef struct _TyWindowObject
 	BOOL bModal;
 	BOOL bOkPressed;
 	HWND hMdiArea; // necessary for DefFrameProcW()
-	TyImageObject* pyIcon;
+	TyIconObject* pyIcon;
 }
 TyWindowObject;
 

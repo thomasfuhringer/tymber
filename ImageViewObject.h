@@ -6,6 +6,9 @@ typedef struct _TyImageViewObject
 	TyWidgetObject_HEAD
 	BOOL bStretch;
 	BOOL bFill;
+	PyObject* pyOnLMouseDownCB;
+	PyObject* pyOnRMouseDownCB;
+	PyObject* pyOnMouseWheelCB;
 }
 TyImageViewObject;
 

@@ -179,7 +179,7 @@ Window
 
     .. attribute:: icon
 
-        :class:`Image` of type *icon*.
+        :class:`Icon`
 
     .. attribute:: before_close
 
@@ -323,6 +323,10 @@ Entry
 
         Callback, return True if ready for focus to move on.
 
+    .. attribute:: multiline
+
+        Characters are not legible.
+
 
 .. _tymber-class-combobox:
 
@@ -433,23 +437,14 @@ Canvas
 
 .. class:: Canvas
 
-    A widget for very basic drawing.
+    A widget for basic drawing. It sports two buffers (index 0 and 1). 
+    By default buffer 0 is active and live.
 
-    .. attribute:: on_paint
 
-        Drawing operations should be done in a callback which is assigned here.
+    .. method:: set_pen([red, green, blue, alpha, width])
 
-    .. attribute:: pen_color
-
-        A tuple of (R, G. B) values to be used for drawing.
-
-    .. attribute:: fill_color
-
-        A tuple of (R, G. B) values to be used for filling rectangles.
-
-    .. attribute:: text_color
-
-        A tuple of (R, G. B) values to be used for drawing text.
+        Color and thickness to be used for drawing and filling.
+        Default: (0, 0, 0, 255, 1)
 
 
     .. method:: point(x, y)
@@ -457,30 +452,103 @@ Canvas
         Draws a point at the given coordinates.
 
 
-    .. method:: move_to(x, y)
+    .. method:: line(x1, y1, x2, y2)
 
-        Sets x, y as the origin of the next line operation.
-
-
-    .. method:: line_to(x, y)
-
-        Draws a line to x, y.
+        Draws a line from *x1*, *y1* to *x2*, *y2*
 
 
-    .. method:: rectangle(x, y, width, height[, radius])
+    .. method:: rectangle(x, y, width, height[, fill])
 
-        Draws a rectangle. If *radius* is provided, corners will be rounded.
-
-
-    .. method:: text(x, y, string)
-
-        Writes *string* at given position.
+        Draws a rectangle. 
 
 
-    .. method:: repaint()
+    .. method:: ellipse(x, y, width, height[, fill])
+
+        Draws an ellipse.
+
+
+    .. method:: text(x, y, x2, y2, string)
+
+        Writes *string* into the given rectangle.
+
+
+    .. method:: image(x, y, data[, width, height])
+
+        Puts an image at the given position. If width or height is given, the image will be scaled retaining aspect ratio.
+        data is to be either a 'str' holding file name or 'bytes' holding the data in memory.
+        
+
+    .. method:: resize_buffer([index, width, height, x, y])
+
+        Changes the size of the buffer. If *index* is not given active_buffer will be used. 
+        If *width* and *height* are not given the canvas' are applied.
+        If given the current content will be moved to *x* and *y*.
+        
+
+    .. method:: copy_buffer(index1, index1)
+
+        Copy the content of buffer 1 to 2.
+        
+
+    .. method:: clear_buffer([index])
+
+        Clears the buffer. If index is not given, the active_buffer will be used.
+        
+
+    .. method:: renew_buffer([index, width, height])
+
+        Creates a new buffer. If index is not given active_buffer will be used. 
+        If width and height are not given the canvas' are applied.
+        
+        
+    .. method:: refresh()
 
         Triggers the paint process.
+        
 
+    .. attribute:: on_resize
+
+        Callback when the widget gets resized.
+        Parameters: widget
+        
+
+    .. attribute:: active_buffer
+
+        Index of the buffer to be used for drawing operations. Default: 0
+        
+
+    .. attribute:: live_buffer
+
+        Index of the buffer to be displayed when the OS refreshes the screen. Default: 0
+        
+
+    .. attribute:: on_mouse_move
+
+        Callback when the mouse is moved.
+        Parameters: widget, x, y
+        
+
+    .. attribute:: on_mouse_wheel
+
+        Callback when the left mouse wheel was turned.
+        Parameters: widget, delta, x, y
+        
+
+    .. attribute:: on_l_button_down
+
+        Callback when the left mouse button is pressed.
+        Parameters: widget, x, y
+        
+
+    .. attribute:: on_l_button_up
+
+        Callback when the left mouse button is released.
+        Parameters: widget, x, y
+        
+
+    .. attribute:: anti_alias
+
+        Drawing operations should be done in a callback which is assigned here.
 
 
 .. _tymber-class-menu:
@@ -512,3 +580,130 @@ MenuItem
     *caption* must be a str to be displayed in the menu,
 
     *on_click* is the callback to be triggered on selection
+    
+
+
+.. _tymber-class-tool-bar:
+
+ToolBar
+--------
+
+.. class:: ToolBar(window)
+
+    Tool bar attached to *window*.
+
+    .. attribute:: children
+
+        A :class:`Dict` of items contained.
+
+    .. method:: append_item(item)
+
+        *item* must be a :class:`MenuItem`
+
+    .. method:: append_separator()
+      
+        
+        
+.. _tymber-class-icon:
+
+Icon
+--------
+
+.. class:: Icon(source)
+
+    An icon to be used in :class:`MenuItem`, :class:`Toolbar` and :class:`Window` objects.
+
+    *source* must be a 'str' of the file name or 'bytes' holding the data.
+    
+    
+
+.. _tymber-class-status-bar:
+
+StatusBar
+--------
+
+.. class:: StatusBar(window[, borders])
+
+    Status bar attached to *window*. *borders* is a :class:`List` of 'int' defining the lengths of parts if more than one are to be used.
+
+    .. method:: set_text(text[, part])
+
+        *part* is an int.
+
+    .. method:: set_text(part)
+    
+    
+
+.. _tymber-class-image-view:
+
+ImageView
+--------
+
+.. class:: ImageView()
+
+    Displays a bitmap.
+    :attr:`data` must be a 'str' of the file name or 'bytes' holding the data.
+    If :attr:`stretch` is True it will be stretched keeping aspect ratio.
+    
+
+.. _tymber-class-list-view:
+
+ListView
+--------
+
+.. class:: ListView()
+
+    Displays a list of data in a table.
+
+
+    .. attribute:: data
+
+        List that holds the data
+        
+    .. attribute:: columns
+
+        List of Lists that define the columns.
+        Format: [caption, data_type, width, data_format] if *width* is *None* the the column is hidden.
+        
+    .. attribute:: row
+
+        Index of row currently selected, or *None*.
+
+    .. attribute:: on_selection_changed
+
+        Callback when a row was selected.
+        Parameters: widget
+
+
+    .. method:: add_row(data[, index])
+
+        Adds a row with *data* after *index* . If *index* is not given :attr:`row` will be used. 
+        In case :attr:`row` is *None* the new row will be appended.
+        
+    .. method:: update_row(data[, index])
+
+        Replaces the row with *data*. If *index* is not given :attr:`row` will be used.
+        
+    .. method:: delete_row(index)
+
+        Removes the row at *index*. 
+        
+        
+.. _tymber-class-mdi-area:
+
+MdiArea
+--------
+
+.. class:: MdiArea()
+
+    Can hold :class:`MdiWindow` objects.
+    
+    
+.. _tymber-class-mdi-window:
+
+MdiWindow
+--------
+
+.. class:: MdiWindow()
+
+    A window to be displayed inside an :class:`MdiArea`

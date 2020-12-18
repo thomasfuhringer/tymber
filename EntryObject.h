@@ -8,6 +8,7 @@ typedef struct _TyEntryObject
 		PyObject* pyOnLeaveCB;
 	PyObject* pyOnKeyCB;
 	BOOL bPassword;
+	BOOL bMultiline;
 }
 TyEntryObject;
 

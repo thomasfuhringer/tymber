@@ -31,7 +31,7 @@ TyMdiWindow_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 static int
 TyMdiWindow_init(TyMdiWindowObject* self, PyObject* args, PyObject* kwds)
 {
-	static char *kwlist[] = { "parent", "key", "left", "top", "width", "height", "caption", "visible", NULL };
+	static char* kwlist[] = { "parent", "key", "left", "top", "width", "height", "caption", "visible", NULL };
 	BOOL bVisible = TRUE;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|iiiiOp", kwlist,
@@ -134,13 +134,17 @@ TyMdiWindow_setattro(TyMdiWindowObject* self, PyObject* pyAttributeName, PyObjec
 		}
 
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "icon") == 0) {
-			if (!PyObject_TypeCheck(pyValue, &TyImageType) || ((TyImageObject*)pyValue)->pyImageFormat != PyObject_GetAttrString(g->pyImageFormatEnum, "ico")) {
-				PyErr_SetString(PyExc_TypeError, "'icon' must be an Image of format icon.");
+			if (pyValue == Py_None) {
+				SendMessageW(self->hWin, WM_SETICON, ICON_SMALL, 0);
+				SendMessageW(self->hWin, WM_SETICON, ICON_BIG, 0);
+			}
+			else if (!PyObject_TypeCheck(pyValue, &TyIconType)) {
+				PyErr_SetString(PyExc_TypeError, "Please assign an 'Icon'!");
 				return -1;
 			}
 			Py_XDECREF(self->pyIcon);
 			Py_INCREF(pyValue);
-			self->pyIcon = (TyImageObject*)pyValue;
+			self->pyIcon = (TyIconObject*)pyValue;
 			SendMessageW(self->hWin, WM_SETICON, ICON_SMALL, (LPARAM)self->pyIcon->hWin);
 			SendMessageW(self->hWin, WM_SETICON, ICON_BIG, (LPARAM)self->pyIcon->hWin);
 			return 0;
@@ -170,7 +174,7 @@ TyMdiWindow_setattro(TyMdiWindowObject* self, PyObject* pyAttributeName, PyObjec
 static PyObject* // new ref
 TyMdiWindow_getattro(TyMdiWindowObject* self, PyObject* pyAttributeName)
 {
-	PyObject* pyResult, *pyAttribute;
+	PyObject* pyResult, * pyAttribute;
 	pyResult = PyObject_GenericGetAttr((PyObject*)self, pyAttributeName);
 	if (pyResult == NULL && PyErr_ExceptionMatches(PyExc_AttributeError) && PyUnicode_Check(pyAttributeName)) {
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "before_close") == 0) {

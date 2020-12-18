@@ -45,7 +45,7 @@
 #define IDC_TYTABLECOL 	       7105
 #define IDC_TYCANVAS  	       7106
 #define IDC_TYENTRY  	       7107
-#define IDC_TYIMAGEVIEW	       7108
+#define IDC_TyImageView	       7108
 #define IDC_TYBOX   	       7109
 #define IDC_TYTOOLBAR  	       7110
 #define IDC_TYTAB   	       7111
@@ -66,13 +66,15 @@
 
 // Windows Header Files
 #include <windows.h>
+#include <windowsx.h>
 #include <Commctrl.h>
 #include <OleCtl.h>
 #include <Shlwapi.h>
 #include <structmember.h>
 
+#include "fGdiPlusFlat.h"
+
 // Tymber Classes
-#include "Version.h"
 #include "Utilities.h"
 #include "ApplicationObject.h"
 #include "WindowObject.h"
@@ -86,7 +88,7 @@
 #include "MenuObject.h"
 #include "StatusBarObject.h"
 #include "ToolBarObject.h"
-#include "ImageObject.h"
+#include "IconObject.h"
 #include "MenuObject.h"
 #include "BoxObject.h"
 #include "SplitterObject.h"

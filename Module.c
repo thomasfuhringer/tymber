@@ -1,7 +1,9 @@
 ﻿// Module.c  | Tymber © 2020 by Thomas Führinger
 #include <Tymber.h>
+#include "Version.h"
 
 TyGlobals* g;
+static ULONG_PTR gdiplusToken;
 
 BOOL
 MessageU(const LPCSTR strMessage, const LPCSTR strTitle, UINT uType)
@@ -148,7 +150,7 @@ static PyMethodDef TymberMethods[] = {
 	{ NULL, NULL, 0, NULL }
 };
 
-static PyModuleDef pylaxmodule = {
+static PyModuleDef TyModule = {
 	PyModuleDef_HEAD_INIT,
 	"tymber",
 	"GUI toolkit",
@@ -170,7 +172,7 @@ PyInit_tymber(void)
 	g->hHeap = GetProcessHeap();
 	g->hCursorWestEast = LoadCursor(NULL, MAKEINTRESOURCEW(IDC_SIZEWE));    // for Splitter
 	g->hCursorNorthSouth = LoadCursor(NULL, MAKEINTRESOURCEW(IDC_SIZENS));
-	g->hBkgBrush = (BOOL)GetSysColorBrush(TyWINDOWBKGCOLOR);
+	g->hBkgBrush = GetSysColorBrush(TyWINDOWBKGCOLOR);
 	Py_INCREF(Py_None);
 
 	if (ExtractIconExW(L"SHELL32.DLL", -3, NULL, &g->hIconMdi, 1) == UINT_MAX) {
@@ -189,6 +191,8 @@ PyInit_tymber(void)
 	icex.dwICC = ICC_COOL_CLASSES | ICC_BAR_CLASSES | ICC_TAB_CLASSES | ICC_LISTVIEW_CLASSES;
 	InitCommonControlsEx(&icex);
 
+	GdiplusStartup(&gdiplusToken, &gdiplusStartupInputDef, NULL);
+
 	PyObject* pyModule;
 	pyModule = PyImport_ImportModule("enum");
 	if (pyModule == NULL) {
@@ -201,7 +205,7 @@ PyInit_tymber(void)
 		return NULL;
 	}
 
-	pyModule = PyModule_Create(&pylaxmodule);
+	pyModule = PyModule_Create(&TyModule);
 	if (pyModule == NULL)
 		return NULL;
 
@@ -242,7 +246,7 @@ PyInit_tymber(void)
 	if (PyType_Ready(&TyWidgetType) < 0)
 		return NULL;
 
-	if (PyType_Ready(&TyImageType) < 0)
+	if (PyType_Ready(&TyIconType) < 0)
 		return NULL;
 
 	if (PyType_Ready(&TyButtonType) < 0)
@@ -289,7 +293,7 @@ PyInit_tymber(void)
 	Py_INCREF(&TyStatusBarType);
 	Py_INCREF(&TyMdiWindowType);
 	Py_INCREF(&TyWidgetType);
-	Py_INCREF(&TyImageType);
+	Py_INCREF(&TyIconType);
 	Py_INCREF(&TyButtonType);
 	Py_INCREF(&TyLabelType);
 	Py_INCREF(&TyEntryType);
@@ -311,7 +315,7 @@ PyInit_tymber(void)
 	PyModule_AddObject(pyModule, "StatusBar", (PyObject*)&TyStatusBarType);
 	PyModule_AddObject(pyModule, "MdiWindow", (PyObject*)&TyMdiWindowType);
 	PyModule_AddObject(pyModule, "Widget", (PyObject*)&TyWidgetType);
-	PyModule_AddObject(pyModule, "Image", (PyObject*)&TyImageType);
+	PyModule_AddObject(pyModule, "Icon", (PyObject*)&TyIconType);
 	PyModule_AddObject(pyModule, "Button", (PyObject*)&TyButtonType);
 	PyModule_AddObject(pyModule, "Label", (PyObject*)&TyLabelType);
 	PyModule_AddObject(pyModule, "Entry", (PyObject*)&TyEntryType);
@@ -338,12 +342,12 @@ PyInit_tymber(void)
 	PyModule_AddObject(pyModule, "Align", g->pyAlignEnum);
 	Py_DECREF(pyArgs);
 
-	pyArgs = Py_BuildValue("(ss)", "ImageFormat", "ico bmp jpg");
+	pyArgs = Py_BuildValue("(ss)", "ImageFormat", "ico bmp png jpg");
 	g->pyImageFormatEnum = PyObject_CallObject(g->pyEnumType, pyArgs);
 	PyModule_AddObject(pyModule, "ImageFormat", g->pyImageFormatEnum);
 	Py_DECREF(pyArgs);
 
-	pyArgs = Py_BuildValue("(ss)", "StockIcon", "file_open file_new save close exit delete help information warning lock edit ok no copy cut paste find undo redo right up properties settings refresh window");
+	pyArgs = Py_BuildValue("(ss)", "StockIcon", "file_open file_new save close exit delete help information warning lock edit ok no copy cut paste find undo redo right up down properties settings refresh window");
 	g->pyStockIconEnum = PyObject_CallObject(g->pyEnumType, pyArgs);
 	PyModule_AddObject(pyModule, "StockIcon", g->pyStockIconEnum);
 	Py_DECREF(pyArgs);

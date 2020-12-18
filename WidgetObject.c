@@ -381,7 +381,7 @@ TyParseString(LPCSTR strText, PyTypeObject* pyDataType, PyObject* pyFormat)
 BOOL
 TyWidget_SetData(TyWidgetObject* self, PyObject* pyData)
 {
-	if (pyData != Py_None && Py_TYPE(pyData) != self->pyDataType) {
+	if (pyData != Py_None && self->pyDataType != NULL && Py_TYPE(pyData) != self->pyDataType) {
 		PyErr_Format(PyExc_TypeError, "Please assign a '%.200s', not '%.200s'!", self->pyDataType->tp_name, Py_TYPE(pyData)->tp_name);
 		return FALSE;
 	}
@@ -398,6 +398,7 @@ TyWidget_SetData(TyWidgetObject* self, PyObject* pyData)
 			return FALSE;
 		Py_DECREF(pyResult);
 	}
+
 	return TRUE;
 }
 
@@ -417,8 +418,8 @@ static PyMemberDef TyWidget_members[] = {
 	{ "tab_next", T_OBJECT, offsetof(TyWidgetObject, pyTabNext), READONLY, "Widget to jump to on tab" },
 	{ "on_changed", T_OBJECT, offsetof(TyWidgetObject, pyOnChangedCB), 0, "Call back when data has changed" },
 	{ "read_only", T_BOOL, offsetof(TyWidgetObject, bReadOnly), READONLY, "Data can not be edited." },
-	{ "align_horiz", T_OBJECT, offsetof(TyWidgetObject, pyAlignHorizontal), READONLY, "Horizontal alignment" },
-	{ "align_vert", T_OBJECT, offsetof(TyWidgetObject, pyAlignVertical), READONLY, "Vertical alignment" },
+	{ "align_h", T_OBJECT, offsetof(TyWidgetObject, pyAlignHorizontal), READONLY, "Horizontal alignment" },
+	{ "align_v", T_OBJECT, offsetof(TyWidgetObject, pyAlignVertical), READONLY, "Vertical alignment" },
 	{ NULL }
 };
 

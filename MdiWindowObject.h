@@ -6,7 +6,7 @@ typedef struct _TyMdiWindowObject
 	TyWindowObject_HEAD
 		PyObject* pyParent;
 	PyObject* pyStatusBar;
-	TyImageObject* pyIcon;
+	TyIconObject* pyIcon;
 }
 TyMdiWindowObject;
 
