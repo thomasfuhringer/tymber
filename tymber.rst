@@ -565,6 +565,8 @@ Menu
     .. attribute:: children
 
         A :class:`Dict` of Widgets contained.
+        
+    .. method:: append_separator()
 
 
 .. _tymber-class-menu-item:
@@ -687,6 +689,20 @@ ListView
     .. method:: delete_row(index)
 
         Removes the row at *index*. 
+        
+        
+.. _tymber-class-file-selector:
+
+FileSelector
+--------
+
+.. class:: FileSelector( caption[, path])
+
+    File selection dialog. *path* is the initial path.
+    
+    .. method:: run()
+
+        Show it modal. Returns the file name if selected or None.
         
         
 .. _tymber-class-mdi-area:

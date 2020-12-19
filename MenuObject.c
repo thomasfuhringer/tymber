@@ -110,6 +110,13 @@ TyMenu_init(TyMenuObject* self, PyObject* args, PyObject* kwds)
 }
 
 static PyObject*
+TyMenu_append_separator(TyCanvasObject* self)
+{
+	AppendMenuW(self->hWin, MF_SEPARATOR, 0, NULL);
+	Py_RETURN_NONE;
+}
+
+static PyObject*
 TyMenu_getattro(TyMenuObject* self, PyObject* pyAttributeName)
 {
 	PyObject* pyResult, * pyAttribute;
@@ -152,12 +159,13 @@ static PyMemberDef TyMenu_members[] = {
 };
 
 static PyMethodDef TyMenu_methods[] = {
-	{ NULL }  /* Sentinel */
+	{ "append_separator", (PyCFunction)TyMenu_append_separator, METH_NOARGS, "Appends a separator." },
+	{ NULL }
 };
 
 PyTypeObject TyMenuType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"tymber.Menu",              /* tp_name */
+	"tymber.Menu",             /* tp_name */
 	sizeof(TyMenuObject),      /* tp_basicsize */
 	0,                         /* tp_itemsize */
 	(destructor)TyMenu_dealloc, /* tp_dealloc */

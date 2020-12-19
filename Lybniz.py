@@ -25,6 +25,21 @@ def graph_zoom_out_menu_item__on_click():
     if mdi.active_child:
         mdi.active_child.zoom(-1)
 
+def graph_decimal_menu_item__on_click():
+    if mdi.active_child:
+        mdi.active_child.scale_style = "deg"
+        GraphClass.button_plot__on_click(mdi.active_child.button_plot)
+        
+def graph_radians_menu_item__on_click():
+    if mdi.active_child:
+        mdi.active_child.scale_style = "rad"
+        GraphClass.button_plot__on_click(mdi.active_child.button_plot)
+        
+def graph_radians_tau_menu_item__on_click():
+    if mdi.active_child:
+        mdi.active_child.scale_style = "tau"
+        GraphClass.button_plot__on_click(mdi.active_child.button_plot)
+
 def about_menu_item__on_click():
     window = ty.Window("About Lybniz", width=320, height=240)
     label=ty.Label(window, "line1", 10, 50, -10, 22, "Function graph plotter").align_h = ty.Align.center
@@ -98,6 +113,7 @@ class GraphClass(ty.MdiWindow):
     def __init__(self):
         GraphClass.graphs += 1
         self.connect_points = True
+        self.scale_style = "rad"
         super(GraphClass, self).__init__(mdi, "graph_" + str(GraphClass.graphs), 10, 10, 640, 420, "Graph " + str(GraphClass.graphs))
 
         y = 10
@@ -152,7 +168,6 @@ class GraphClass(ty.MdiWindow):
         self.y1 = self.entry_y1.data
         self.y2 = self.entry_y2.data
         self.y3 = self.entry_y3.data
-        self.scale_style = "rad"
         GraphClass.canvas__on_resize(self.canvas)
         self.canvas.refresh()
 
@@ -372,10 +387,14 @@ menu = ty.Menu(app, "main", "Main")
 file_menu = ty.Menu(menu, "file", "File")
 file_new_menu_item = ty.MenuItem(file_menu, "new", "New", file_new_menu_item__on_click, ty.Icon(ty.StockIcon.file_new))
 file_exit_menu_item = ty.MenuItem(file_menu, "exit", "Exit", file_exit_menu_item__on_click, ty.Icon(ty.StockIcon.exit))
-window_menu = ty.Menu(menu, "window", "Window")
 graph_menu = ty.Menu(menu, "graph", "Graph")
 graph_zoom_in_menu_item = ty.MenuItem(graph_menu, "zoom_in", "Zoom In", graph_zoom_in_menu_item__on_click, ty.Icon(ty.StockIcon.down))
 graph_zoom_out_menu_item = ty.MenuItem(graph_menu, "zoom_out", "Zoom Out", graph_zoom_out_menu_item__on_click, ty.Icon(ty.StockIcon.up))
+graph_menu.append_separator()
+graph_decimal_menu_item = ty.MenuItem(graph_menu, "decimal", "Decimal", graph_decimal_menu_item__on_click)
+graph_radians_menu_item = ty.MenuItem(graph_menu, "rad", "Radians π", graph_radians_menu_item__on_click)
+graph_radians_tau_menu_item = ty.MenuItem(graph_menu, "tau", "Radians τ", graph_radians_tau_menu_item__on_click)
+window_menu = ty.Menu(menu, "window", "Window")
 help_menu = ty.Menu(menu, "help", "Help")
 about_menu_item = ty.MenuItem(help_menu, "about", "About...", about_menu_item__on_click, ty.Icon(ty.StockIcon.information))
 

@@ -11,6 +11,4 @@ TyIconObject;
 
 extern PyTypeObject TyIconType;
 
-typedef enum { TyIconFORMAT_ICO, TyIconFORMAT_BMP, TyIconFORMAT_JPG } TyIconFormatEnum;
-
 #endif /* Ty_ICONOBJECT_H */

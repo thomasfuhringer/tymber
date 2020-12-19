@@ -96,6 +96,7 @@
 #include "ImageViewObject.h"
 #include "ComboBoxObject.h"
 #include "ListViewObject.h"
+#include "FileSelectorObject.h"
 
 typedef struct _TyMenuItemObject TyMenuItemObject;
 typedef struct _TyApplicationObject TyApplicationObject;

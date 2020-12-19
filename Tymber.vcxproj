@@ -9,14 +9,6 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release Py35|Win32">
-      <Configuration>Release Py35</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release Py35|x64">
-      <Configuration>Release Py35</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Release Py38|Win32">
       <Configuration>Release Py38</Configuration>
       <Platform>Win32</Platform>
@@ -74,13 +66,6 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py35|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py38|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -101,13 +86,6 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v142</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py35|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py38|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -131,9 +109,6 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Py39|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Py35|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Py38|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -141,9 +116,6 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Py39|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Py35|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Py38|x64'" Label="PropertySheets">
@@ -158,13 +130,6 @@
     <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py39|Win32'">
-    <IncludePath>.;C:\Program Files\Python39\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\Python39\libs;$(LibraryPath)</LibraryPath>
-    <OutDir>$(Platform)\..\</OutDir>
-    <TargetName>tymber</TargetName>
-    <TargetExt>.pyd</TargetExt>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py35|Win32'">
     <IncludePath>.;C:\Program Files\Python39\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Python39\libs;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\..\</OutDir>
@@ -195,13 +160,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py39|x64'">
     <IncludePath>.;C:\Program Files\Python39\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Python39\libs;$(LibraryPath)</LibraryPath>
-    <OutDir>$(Platform)\..\</OutDir>
-    <TargetName>tymber</TargetName>
-    <TargetExt>.pyd</TargetExt>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py35|x64'">
-    <IncludePath>.;..\Python-3.5.1\PC;..\Python-3.5.1\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\Python-3.5.1\PCbuild\amd64;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\..\</OutDir>
     <TargetName>tymber</TargetName>
     <TargetExt>.pyd</TargetExt>
@@ -282,24 +240,6 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Py35|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-    </ClCompile>
-    <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>comctl32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Py38|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -350,22 +290,6 @@
       <AdditionalDependencies>comctl32.lib;Shlwapi.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Py35|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>comctl32.lib;Shlwapi.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Py38|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -389,6 +313,7 @@
     <ClCompile Include="CanvasObject.c" />
     <ClCompile Include="ComboBoxObject.c" />
     <ClCompile Include="EntryObject.c" />
+    <ClCompile Include="FileSelectorObject.c" />
     <ClCompile Include="IconObject.c" />
     <ClCompile Include="ImageViewObject.c" />
     <ClCompile Include="LabelObject.c" />
@@ -413,6 +338,7 @@
     <ClInclude Include="ComboBoxObject.h" />
     <ClInclude Include="EntryObject.h" />
     <ClInclude Include="fGdiPlusFlat.h" />
+    <ClInclude Include="FileSelectorObject.h" />
     <ClInclude Include="IconObject.h" />
     <ClInclude Include="ImageViewObject.h" />
     <ClInclude Include="LabelObject.h" />
