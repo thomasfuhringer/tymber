@@ -16,7 +16,8 @@ BOOL HFree(_In_ LPVOID pMem)
 	return HeapFree(g->hHeap, 0, pMem);
 }
 
-LPCSTR toU8(const LPWSTR szUTF16)
+char*
+toU8(const LPWSTR szUTF16)
 {
 	if (szUTF16 == NULL)
 		return NULL;
@@ -28,7 +29,7 @@ LPCSTR toU8(const LPWSTR szUTF16)
 		PyErr_SetString(PyExc_RuntimeError, "Sting converson to wide character failed.");
 		return NULL;
 	}
-	LPCSTR strTextUTF8 = (LPCSTR)PyMem_RawMalloc(cbUTF8);
+	char* strTextUTF8 = (char*)PyMem_RawMalloc(cbUTF8);
 	int result = WideCharToMultiByte(CP_UTF8, 0, szUTF16, -1, strTextUTF8, cbUTF8, NULL, NULL);
 	if (result == 0) {
 		PyErr_SetString(PyExc_RuntimeError, "Sting converson to wide character failed.");
@@ -37,7 +38,8 @@ LPCSTR toU8(const LPWSTR szUTF16)
 	return strTextUTF8;
 }
 
-LPWSTR toW(const LPCSTR strTextUTF8)
+LPWSTR
+toW(const char* strTextUTF8)
 {
 	if (strTextUTF8 == NULL)
 		return NULL;
@@ -68,7 +70,12 @@ TyAttachObject(PyObject** ppyMember, PyObject* pyObject)
 	return TRUE;
 }
 
-void XX(PyObject* pyObject) // for debuggin purposes
+void X(PyObject* pyObject) // for debuggin purposes
+{
+	XX(pyObject, "");
+}
+
+void XX(PyObject* pyObject, char* strMessage) // for debuggin purposes
 {
 	if (pyObject) {
 		char* key = "";
@@ -77,7 +84,7 @@ void XX(PyObject* pyObject) // for debuggin purposes
 		}
 		PyObject* objectsRepresentation = PyObject_Repr(pyObject);
 		const char* str = PyUnicode_AsUTF8(objectsRepresentation);
-		printf("%s %s %11d refs\n", str, key, pyObject->ob_refcnt);
+		printf("%s | %s %s %11d refs\n", strMessage, str, key, pyObject->ob_refcnt);
 		Py_DECREF(objectsRepresentation);
 	}
 	else {

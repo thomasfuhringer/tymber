@@ -17,15 +17,16 @@ TyWindow_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 		self->rc.top = TyWIDGET_CENTER;
 		self->rc.right = 320;
 		self->rc.bottom = 240;
+		self->pyCaption = NULL;
 		self->pyIcon = NULL;
 		self->bModal = FALSE;
+		self->iToolBarHeight = 0;
+		self->iStatusBarHeight = 0;
+		self->pyFocusWidget = NULL;
+		self->pyOnFocusChangeCB = NULL;
 		self->pyBeforeCloseCB = NULL;
 		self->pyOnCloseCB = NULL;
 		self->hMdiArea = NULL;
-		self->iStatusBarHeight = 0;
-		self->iToolBarHeight = 0;
-		self->pyFocusWidget = NULL;
-		self->pyOnFocusChangeCB = NULL;
 		return (PyObject*)self;
 	}
 	else
@@ -36,11 +37,10 @@ static int
 TyWindow_init(TyWindowObject* self, PyObject* args, PyObject* kwds)
 {
 	static char* kwlist[] = { "caption", "left", "top", "width", "height", "visible", NULL };
-	PyObject* pyCaption = NULL;
 	BOOL bVisible = TRUE;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oiiiip", kwlist,
-		&pyCaption,
+		&self->pyCaption,
 		&self->rc.left,
 		&self->rc.top,
 		&self->rc.right,
@@ -48,14 +48,27 @@ TyWindow_init(TyWindowObject* self, PyObject* args, PyObject* kwds)
 		&bVisible))
 		return -1;
 
+	LPWSTR szCaption = NULL;
+	if (self->pyCaption) {
+		if (PyUnicode_Check(self->pyCaption)) {
+			LPCSTR strText = PyUnicode_AsUTF8(self->pyCaption);
+			szCaption = toW(strText);
+		}
+		else {
+			PyErr_SetString(PyExc_TypeError, "Argument 1 ('caption') must be a string, not '%.200s'.", self->pyCaption->ob_type->tp_name);
+			return -1;
+		}
+	}
+
 	HWND hwndParent = GetDesktopWindow();
 	if (g->pyApp != Py_None && g->pyApp->pyWindow)
 		hwndParent = ((TyWindowObject*)g->pyApp->pyWindow)->hWin;
 
 	RECT rect;
-	TyWidget_CalculateRect(self, &rect);
+	if (!TyWidget_CalculateRect(self, &rect))
+		return -1;
 
-	if ((self->hWin = CreateWindowExW(WS_EX_CONTROLPARENT, L"TyWindowClass", L"<new>",
+	if ((self->hWin = CreateWindowExW(WS_EX_CONTROLPARENT, L"TyWindowClass", szCaption,
 		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_POPUP | (bVisible ? WS_VISIBLE : 0),
 		rect.left, rect.top, rect.right, rect.bottom,
 		hwndParent, 0, g->hInstance, NULL)) == NULL) {
@@ -63,17 +76,8 @@ TyWindow_init(TyWindowObject* self, PyObject* args, PyObject* kwds)
 		return -1;
 	}
 
-	if (pyCaption != NULL) {
-		LPCSTR strText = PyUnicode_AsUTF8(pyCaption);
-		LPWSTR szText = toW(strText);
-		BOOL bSuccessful = SendMessage(self->hWin, WM_SETTEXT, (WPARAM)0, (LPARAM)szText);
-		PyMem_RawFree(szText);
-		if (!bSuccessful) {
-			PyErr_SetFromWindowsErr(0);
-			return -1;
-		}
-	}
-
+	if (szCaption)
+		PyMem_RawFree(szCaption);
 	Py_INCREF(Py_None);
 	Py_INCREF(Py_None);
 	self->pyChildren = PyDict_New();
@@ -82,6 +86,29 @@ TyWindow_init(TyWindowObject* self, PyObject* args, PyObject* kwds)
 
 	SetWindowLongPtr(self->hWin, GWLP_USERDATA, (LONG_PTR)self);
 	return 0;
+}
+
+static PyObject*
+TyWindow_run(TyWindowObject* self)
+{
+	BOOL r = ShowWindow(self->hWin, SW_SHOW);
+
+	self->bModal = TRUE;
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0) > 0 && self->bModal)
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	Py_RETURN_NONE;
+}
+
+static PyObject*
+TyWindow_close(TyWindowObject* self)
+{
+	SendMessage(self->hWin, WM_CLOSE, (WPARAM)0, (LPARAM)0);
+	Py_RETURN_NONE;
 }
 
 static int
@@ -94,7 +121,7 @@ TyWindow_setattro(TyWindowObject* self, PyObject* pyAttributeName, PyObject* pyV
 		}
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "before_close") == 0) {
 			if (PyCallable_Check(pyValue)) {
-				Py_XINCREF(pyValue);
+				Py_INCREF(pyValue);
 				Py_XDECREF(self->pyBeforeCloseCB);
 				self->pyBeforeCloseCB = pyValue;
 				return 0;
@@ -156,7 +183,7 @@ TyWindow_setattro(TyWindowObject* self, PyObject* pyAttributeName, PyObject* pyV
 	return Py_TYPE(self)->tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
 }
 
-static PyObject* // new ref
+static PyObject*
 TyWindow_getattro(TyWindowObject* self, PyObject* pyAttributeName)
 {
 	PyObject* pyResult, * pyAttribute;
@@ -219,7 +246,6 @@ TyWindow_getattro(TyWindowObject* self, PyObject* pyAttributeName)
 static void
 TyWindow_dealloc(TyWindowObject* self)
 {
-	//printf("TyWindow_dealloc\n");
 	Py_XDECREF(self->pyChildren);
 	if (self->hWin) {
 		if (!DestroyWindow(self->hWin)) {
@@ -227,6 +253,11 @@ TyWindow_dealloc(TyWindowObject* self)
 		}
 	}
 	Py_XDECREF(self->pyBeforeCloseCB);
+	Py_XDECREF(self->pyOnCloseCB);
+	Py_XDECREF(self->pyOnFocusChangeCB);
+	Py_XDECREF(self->pyIcon);
+	Py_XDECREF(self->pyToolBar);
+	Py_XDECREF(self->pyStatusBar);
 	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -319,14 +350,13 @@ WindowClass_Init()
 	return TRUE;
 }
 
-static LPMINMAXINFO lpMMI;
 
 static LRESULT CALLBACK
 TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	PyObject* pyResult = NULL;
-	TyWidgetObject* pyWidget;
 	WORD wCommandIdentifier;
+	LPMINMAXINFO lpMMI;
 
 	TyWindowObject* self = (TyWindowObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	if (self) {
@@ -340,20 +370,6 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					PyErr_Print();
 					return 0;
 				}
-			}
-			switch (HIWORD(wParam))
-			{
-			case EN_SETFOCUS:
-				pyWidget = (TyWidgetObject*)GetWindowLongPtr(lParam, GWLP_USERDATA);
-				if (pyWidget && !TyWidget_FocusIn(pyWidget))
-					PyErr_Print();
-				break;
-
-			case EN_KILLFOCUS:
-				pyWidget = (TyWidgetObject*)GetWindowLongPtr(lParam, GWLP_USERDATA);
-				//printf("EN_KILLFOCUS %p \n", pyWidget);
-				if (pyWidget && !TyWidget_FocusOut(pyWidget))
-					PyErr_Print();
 			}
 			break;
 
@@ -370,16 +386,13 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				if (!PyObject_TypeCheck((PyObject*)self, &TyMdiWindowType))
 					return 0;
 			}
-
 			break;
 
 		case WM_MDIACTIVATE:
 			if (hwnd != wParam) {
 				PyObject* pyOnActivated = ((TyMdiAreaObject*)((TyMdiWindowObject*)self)->pyParent)->pyOnActivatedCB;
 				if (pyOnActivated) {
-					PyObject* pyArgs = PyTuple_Pack(1, (PyObject*)self);
-					Py_INCREF(self);
-					PyObject* pyResult = PyObject_CallObject(pyOnActivated, pyArgs);
+					pyResult = PyObject_CallFunction(pyOnActivated, "(O)", self);
 					if (pyResult == NULL)
 						return FALSE;
 					Py_DECREF(pyResult);
@@ -390,15 +403,13 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case WM_QUERYENDSESSION:
 		case WM_CLOSE:
 			if (self->pyBeforeCloseCB && self->pyBeforeCloseCB != Py_None) {
-				PyObject* pyArgs = PyTuple_Pack(1, (PyObject*)self);
-				PyObject* r = PyObject_CallObject(self->pyBeforeCloseCB, pyArgs);
-				if (r == NULL) {
+				pyResult = PyObject_CallFunction(self->pyBeforeCloseCB, "(O)", self);
+				if (pyResult == NULL) {
 					PyErr_Print();
 					return 0;
 				}
-				Py_XDECREF(pyArgs);
-				BOOL bCloseNot = (r == Py_False);
-				Py_XDECREF(r);
+				BOOL bCloseNot = (pyResult == Py_False);
+				Py_XDECREF(pyResult);
 				if (bCloseNot)
 					return 0;
 			}
@@ -418,7 +429,7 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 				PyObject* pyOnActivated = pyParent->pyOnActivatedCB;
 				if (pyOnActivated) {
-					PyObject* pyResult = PyObject_CallFunction(self->pyOnCloseCB, "(O)", Py_None);
+					pyResult = PyObject_CallFunction(self->pyOnCloseCB, "(O)", Py_None);
 					if (pyResult == NULL)
 						return FALSE;
 					Py_DECREF(pyResult);
@@ -428,7 +439,7 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				ShowWindow(self->hWin, SW_HIDE);
 
 			if (self->pyOnCloseCB && self->pyOnCloseCB != Py_None) {
-				PyObject* pyResult = PyObject_CallFunction(self->pyOnCloseCB, "(O)", self);
+				pyResult = PyObject_CallFunction(self->pyOnCloseCB, "(O)", self);
 				if (pyResult == NULL) {
 					PyErr_Print();
 					return 0;
@@ -437,13 +448,8 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 			return 0;
 
-		case WM_DESTROY:
-			//printf("WM_DESTROY\n");
-			return 0;
-
-			self->hWin = NULL;
-			Py_DECREF(self);
-			return 0;
+			//case WM_DESTROY:
+				//return 0;
 		}
 	}
 	return DefParentProc(hwnd, uMsg, wParam, lParam, self);
@@ -453,7 +459,6 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 LRESULT
 DefParentProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, PyObject* self)
 {
-	TyWidgetObject* pyWidget;
 	switch (uMsg) {
 	case WM_NOTIFY:
 	{
@@ -463,23 +468,7 @@ DefParentProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, PyObject* self
 		break;
 	}
 
-	// Control's HWND in LPARAM
 	case WM_COMMAND:
-		switch (HIWORD(wParam))
-		{
-		case EN_SETFOCUS:
-			pyWidget = (TyWidgetObject*)GetWindowLongPtr(lParam, GWLP_USERDATA);
-			if (pyWidget && !TyWidget_FocusIn(pyWidget))
-				PyErr_Print();
-			break;
-
-		case EN_KILLFOCUS:
-			pyWidget = (TyWidgetObject*)GetWindowLongPtr(lParam, GWLP_USERDATA);
-			//printf("EN_KILLFOCUS %p \n", pyWidget);
-			if (pyWidget && !TyWidget_FocusOut(pyWidget))
-				PyErr_Print();
-		}
-		//break;
 	case WM_CTLCOLORBTN:
 	case WM_CTLCOLOREDIT:
 	case WM_CTLCOLORDLG:
@@ -492,43 +481,28 @@ DefParentProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, PyObject* self
 		if (lParam != 0)
 			return SendMessage((HWND)lParam, uMsg + OCM__BASE, wParam, lParam);
 		break;
+
+	case WM_DRAWITEM:
+	case WM_MEASUREITEM:
+	case WM_DELETEITEM:
+	case WM_COMPAREITEM:
+		if (wParam != 0) {
+			HWND hwndControl = GetDlgItem(hwnd, wParam);
+			if (hwndControl)
+				return SendMessage(hwndControl, uMsg + OCM__BASE, wParam, lParam);
+		}
+		break;
+
 	}
-	if ((uMsg >= OCM__BASE))
-		uMsg -= OCM__BASE;
 
 	// pick the right DefXxxProcW
 	if (self != NULL) {
-		if (PyObject_TypeCheck(self, &TyMdiWindowType))
+		if (PyObject_TypeCheck(self, &TyMdiWindowType)) {
 			return DefMDIChildProcW(hwnd, uMsg, wParam, lParam);
-		if (PyObject_TypeCheck(self, &TyWindowType) && ((TyWindowObject*)self)->hMdiArea) {
+		}
+		if (PyObject_TypeCheck(self, &TyWindowType) && ((TyWindowObject*)self)->hMdiArea && (uMsg != WM_SIZE)) {
 			return DefFrameProcW(hwnd, ((TyWindowObject*)self)->hMdiArea, uMsg, wParam, lParam);
 		}
 	}
 	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
-}
-
-static PyObject*
-TyWindow_run(TyWindowObject* self)
-{
-	BOOL r = ShowWindow(self->hWin, SW_SHOW);
-
-	self->bModal = TRUE;
-	MSG msg;
-	//HACCEL hAccelTable = LoadAccelerators(g->hInstance, MAKEINTRESOURCE(IDS_LOGO));
-	while (GetMessage(&msg, NULL, 0, 0) > 0 && self->bModal)
-	{
-		//if (!IsDialogMessage(self->hWin, &msg)) { //&& !TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-		//}
-	}
-
-	Py_RETURN_NONE;
-}
-
-static PyObject*
-TyWindow_close(TyWindowObject* self)
-{
-	SendMessage(self->hWin, WM_CLOSE, (WPARAM)0, (LPARAM)0);
-	Py_RETURN_NONE;
 }

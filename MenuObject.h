@@ -34,7 +34,5 @@ TyMenuItemObject;
 
 extern PyTypeObject TyMenuItemType;
 
-void TyMenuItems_DeleteAll();
-
 #endif
 

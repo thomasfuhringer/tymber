@@ -215,10 +215,6 @@ PyInit_tymber(void)
 		return NULL;
 	if (!TyBoxType_Init())
 		return NULL;
-	if (!TyToolBarType_Init())
-		return NULL;
-	if (!TyStatusBarType_Init())
-		return NULL;
 	if (!TyImageViewType_Init())
 		return NULL;
 
@@ -309,7 +305,7 @@ PyInit_tymber(void)
 	Py_INCREF(&TyImageViewType);
 	Py_INCREF(&TyComboBoxType);
 	Py_INCREF(&TyListViewType);
-	Py_INCREF(&TyFileSelectorType);	
+	Py_INCREF(&TyFileSelectorType);
 
 	PyModule_AddObject(pyModule, "Application", (PyObject*)&TyApplicationType);
 	PyModule_AddObject(pyModule, "Window", (PyObject*)&TyWindowType);

@@ -10,6 +10,7 @@ typedef struct _TyListViewObject
 	int iAutoSizeColumn;
 	PyObject* pyOnRowChangedCB;
 	PyObject* pyOnSelectionChangedCB;
+	PyObject* pyOnDoubleClickCB;
 	//BOOL bShowRecordIndicator;
 	//int iFocusRow;
 	//int iFocusColumn;

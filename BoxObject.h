@@ -2,10 +2,14 @@
 #ifndef Ty_BOXOBJECT_H
 #define Ty_BOXOBJECT_H
 
+
+#define TyBoxObject_HEAD  \
+		TyWidgetObject_HEAD \
+		PyObject* pyChildren;
+
 typedef struct _TyBoxObject
 {
-	TyWidgetObject_HEAD
-		PyObject* pyChildren;
+	TyBoxObject_HEAD
 }
 TyBoxObject;
 

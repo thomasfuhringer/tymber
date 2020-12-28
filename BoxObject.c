@@ -45,6 +45,11 @@ TyBox_getattro(TyBoxObject* self, PyObject* pyAttributeName)
 	PyObject* pyResult, * pyAttribute;
 	pyResult = PyObject_GenericGetAttr((PyObject*)self, pyAttributeName);
 	if (pyResult == NULL && PyErr_ExceptionMatches(PyExc_AttributeError) && PyUnicode_Check(pyAttributeName)) {
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "children") == 0) {
+			PyErr_Clear();
+			Py_INCREF(self->pyChildren);
+			return self->pyChildren;
+		}
 		if (PyDict_Contains(self->pyChildren, pyAttributeName)) {
 			PyErr_Clear();
 			pyAttribute = PyDict_GetItem(self->pyChildren, pyAttributeName);
@@ -59,11 +64,13 @@ TyBox_getattro(TyBoxObject* self, PyObject* pyAttributeName)
 static void
 TyBox_dealloc(TyBoxObject* self)
 {
-	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
+	Py_DECREF(self->pyChildren);
+	DestroyWindow(self->hWin);
+	TyBoxType.tp_base->tp_dealloc((PyObject*)self);
 }
 
 static PyMemberDef TyBox_members[] = {
-	{ "children", T_OBJECT, offsetof(TyBoxObject, pyChildren), READONLY, "Child widgets" },
+	//{ "children", T_OBJECT, offsetof(TyBoxObject, pyChildren), READONLY, "Child widgets" }, // caused problem with reference count
 	{ NULL }
 };
 

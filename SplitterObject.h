@@ -4,13 +4,13 @@
 
 typedef struct _TySplitterObject
 {
-	TyWidgetObject_HEAD
-		PyObject* pyChildren;
-	TyBoxObject* pyBox1;
+	TyBoxObject_HEAD
+		TyBoxObject* pyBox1;
 	TyBoxObject* pyBox2;
 	BOOL bVertical;
 	int iPosition;
 	int iSpacing;
+	BOOL bSplitterMoving;
 }
 TySplitterObject;
 

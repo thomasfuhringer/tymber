@@ -3,7 +3,7 @@
 
 static LPWSTR szToolBarClass = L"TyToolBarClass";
 
-static PyObject *
+static PyObject*
 TyToolBar_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
 	TyToolBarObject* self = (TyToolBarObject*)type->tp_alloc(type, 0);
@@ -19,7 +19,7 @@ TyToolBar_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 static int
 TyToolBar_init(TyToolBarObject* self, PyObject* args, PyObject* kwds)
 {
-	static char *kwlist[] = { "window", NULL };
+	static char* kwlist[] = { "window", NULL };
 	PyObject* pyWindow = NULL;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist,
@@ -36,7 +36,7 @@ TyToolBar_init(TyToolBarObject* self, PyObject* args, PyObject* kwds)
 		TyAttachObject(&((TyWindowObject*)pyWindow)->pyToolBar, self);
 	}
 	else {
-		PyErr_Format(PyExc_TypeError, "Parameter 1 ('window') must be a Window, not '%.200s'.", pyWindow->ob_type->tp_name);
+		PyErr_Format(PyExc_TypeError, "Argument 1 ('window') must be a Window, not '%.200s'.", pyWindow->ob_type->tp_name);
 		return -1;
 	}
 
@@ -75,7 +75,7 @@ TyToolBar_Reposition(TyToolBarObject* self)
 PyObject*
 TyToolBar_AppendItem(TyToolBarObject* self, PyObject* args, PyObject* kwds)
 {
-	static char *kwlist[] = { "item", NULL };
+	static char* kwlist[] = { "item", NULL };
 	TyMenuItemObject* pyItem;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist,
@@ -83,7 +83,7 @@ TyToolBar_AppendItem(TyToolBarObject* self, PyObject* args, PyObject* kwds)
 		return NULL;
 
 	if (!PyObject_TypeCheck(pyItem, &TyMenuItemType)) {
-		PyErr_Format(PyExc_TypeError, "Parameter 1 ('item') must be a MenuItem, not '%.200s'.", ((PyObject*)pyItem)->ob_type->tp_name);
+		PyErr_Format(PyExc_TypeError, "Argument 1 ('item') must be a MenuItem, not '%.200s'.", ((PyObject*)pyItem)->ob_type->tp_name);
 		return -1;
 	}
 
@@ -115,12 +115,36 @@ TyToolBar_AppendSeparator(TyToolBarObject* self, PyObject* arg)
 	Py_RETURN_NONE;
 }
 
+PyObject*
+TyToolBar_SetEnabled(TyToolBarObject* self, PyObject* args, PyObject* kwds)
+{
+	static char* kwlist[] = { "item", "enabled", NULL };
+	TyMenuItemObject* pyItem;
+	BOOL bEnabled;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "Ob", kwlist,
+		&pyItem,
+		&bEnabled))
+		return NULL;
+
+	if (!PyObject_TypeCheck(pyItem, &TyMenuItemType)) {
+		PyErr_Format(PyExc_TypeError, "Argument 2 ('item') must be a MenuItem, not '%.200s'.", ((PyObject*)pyItem)->ob_type->tp_name);
+		return NULL;
+	}
+
+	if (!SendMessage(self->hWin, TB_ENABLEBUTTON, pyItem->iIdentifier, MAKELONG(bEnabled, 0))) {
+		PyErr_SetFromWindowsErr(0);
+		return NULL;
+	}
+	Py_RETURN_NONE;
+}
+
 static void
 TyToolBar_dealloc(TyToolBarObject* self)
 {
 	DestroyWindow(self->hWin);
 	ImageList_Destroy(self->hImageList);
-	Py_TYPE(self)->tp_base->tp_dealloc((PyObject *)self);
+	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
 }
 
 static PyMemberDef TyToolBar_members[] = {
@@ -131,6 +155,7 @@ static PyMemberDef TyToolBar_members[] = {
 static PyMethodDef TyToolBar_methods[] = {
 	{ "append_item", (PyCFunction)TyToolBar_AppendItem, METH_VARARGS | METH_KEYWORDS, "Appends a MenuItem the ToolBar" },
 	{ "append_separator", (PyCFunction)TyToolBar_AppendSeparator, METH_NOARGS, "Appends a separator item the ToolBar." },
+	{ "set_enabled", (PyCFunction)TyToolBar_SetEnabled, METH_VARARGS | METH_KEYWORDS, "Enables or disabled a button." },
 	{ NULL }
 };
 
@@ -174,51 +199,3 @@ PyTypeObject TyToolBarType = {
 	0,                         /* tp_alloc */
 	TyToolBar_new,             /* tp_new */
 };
-
-
-static LRESULT CALLBACK TyToolBarProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-BOOL
-TyToolBarType_Init()
-{
-	WNDCLASSEX wc;
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = TyToolBarProc;
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = g->hInstance;
-	wc.hIcon = NULL;
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = NULL;
-	wc.lpszMenuName = NULL;
-	wc.lpszClassName = szToolBarClass;
-	wc.hIconSm = NULL;
-
-	if (!RegisterClassEx(&wc))
-	{
-		PyErr_SetFromWindowsErr(0);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-static LRESULT CALLBACK
-TyToolBarProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	TyToolBarObject* self = NULL;
-	switch (uMsg)
-	{
-	case WM_ERASEBKGND: {
-		self = (TyToolBarObject*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-		if (self == NULL)
-			break;
-		RECT rc;
-		GetClientRect(hwnd, &rc);
-		FillRect((HDC)wParam, &rc, g->hBkgBrush);
-		return 1L;
-	}
-	}
-	return DefParentProc(hwnd, uMsg, wParam, lParam, self);
-}

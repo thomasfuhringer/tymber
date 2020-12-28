@@ -1,8 +1,8 @@
-import tymber as ty   
-    
+import tymber as ty
+
 def button__on_click(button):
     button.parent.close()
-    
+
 app = ty.Application(ty.Window("Tymber", width=360, height=280))
 label = ty.Label(app.window, "label", 20, 60, -20, 22, "Hello World!")
 label.align_h = ty.Align.center

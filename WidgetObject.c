@@ -72,22 +72,22 @@ TyWidget_init(TyWidgetObject* self, PyObject* args, PyObject* kwds)
 	}
 	else
 		self->pyDataType = &PyUnicode_Type;
+	Py_INCREF(self->pyDataType);
 
 	if (self->pyFormat) {
 		if (!PyUnicode_Check(self->pyFormat)) {
 			PyErr_Format(PyExc_TypeError, "Argument 6 ('format') must be a string, not '%.200s'.", self->pyFormat->ob_type->tp_name);
 			return -1;
 		}
-		Py_INCREF(self->pyFormat);
 	}
 	else {
-		Py_INCREF(Py_None);
 		self->pyFormat = Py_None;
 	}
+	Py_INCREF(self->pyFormat);
 
 	if (PyObject_HasAttrString(self->pyParent, "children")) {
 		PyObject* pyChildren = PyObject_GetAttrString(self->pyParent, "children");
-		if (PyDict_GetItemString(pyChildren, PyUnicode_AsUTF8(self->pyKey)) != NULL) {
+		if (PyDict_GetItem(pyChildren, self->pyKey) != NULL) {
 			PyErr_Format(PyExc_AttributeError, "Parent widget already contains a widget with this key.");
 			return -1;
 		}
@@ -99,6 +99,7 @@ TyWidget_init(TyWidgetObject* self, PyObject* args, PyObject* kwds)
 			self->pyWindow = self->pyParent;
 		else
 			self->pyWindow = ((TyWidgetObject*)self->pyParent)->pyWindow;
+		Py_DECREF(pyChildren);
 	}
 	else {
 		PyErr_Format(PyExc_TypeError, "Parent widget of type %.200s can not contain widgets.", ((PyObject*)self->pyParent)->ob_type->tp_name);
@@ -108,21 +109,10 @@ TyWidget_init(TyWidgetObject* self, PyObject* args, PyObject* kwds)
 	return 0;
 }
 
-static BOOL CALLBACK
-CloseEnumProc(HWND hwnd, LPARAM lParam)
-{
-	EnumChildWindows(hwnd, CloseEnumProc, 0);
-	TyWidgetObject* pyWidget = (TyWidgetObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-	if (pyWidget != NULL)
-		Py_DECREF(pyWidget);
-	return TRUE;
-}
-
 static void
 TyWidget_dealloc(TyWidgetObject* self)
 {
 	if (self->hWin) {
-		EnumChildWindows(self->hWin, CloseEnumProc, 0);
 		DestroyWindow(self->hWin);
 		self->hWin = 0;
 	}
@@ -134,6 +124,7 @@ TyWidget_dealloc(TyWidgetObject* self)
 	Py_XDECREF(self->pyAlignHorizontal);
 	Py_XDECREF(self->pyAlignVertical);
 
+	//XX(self, "TyWidget_dealloc");
 	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -178,7 +169,6 @@ TyWidget_setattro(TyWidgetObject* self, PyObject* pyAttributeName, PyObject* pyV
 			return  0;
 		}
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "tab_next") == 0) {
-
 			if (PyObject_TypeCheck(pyValue, &TyWidgetType) && (((TyWidgetObject*)pyValue)->pyWindow == self->pyWindow)) {
 				self->pyTabNext = pyValue;
 				return  0;
@@ -234,8 +224,20 @@ TyWidget_getattro(TyWidgetObject* self, PyObject* pyAttributeName)
 		}
 	}
 	Py_XDECREF(pyResult);
-	//return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 	return TyWidgetType.tp_base->tp_getattro((PyObject*)self, pyAttributeName);
+}
+
+BOOL
+TyWidget_MoveWindow(TyWidgetObject* self)
+{
+	RECT rect;
+	if (!TyWidget_CalculateRect(self, &rect))
+		return FALSE;
+	if (MoveWindow(self->hWin, rect.left, rect.top, rect.right, rect.bottom, TRUE) == 0) {
+		PyErr_SetFromWindowsErr(0);
+		return FALSE;
+	}
+	return TRUE;
 }
 
 static PyObject*
@@ -249,9 +251,9 @@ TyWidget_move(TyWidgetObject* self, PyObject* args, PyObject* kwds)
 		&self->rc.bottom))
 		return NULL;
 
-	if (TyWidget_MoveWindow(self))
-		Py_RETURN_TRUE;
-	Py_RETURN_FALSE;
+	if (!TyWidget_MoveWindow(self))
+		Py_RETURN_FALSE;
+	Py_RETURN_TRUE;
 }
 
 BOOL
@@ -471,19 +473,6 @@ PyTypeObject TyWidgetType = {
 	0,                         /*tp_is_gc*/
 };
 
-BOOL
-TyWidget_MoveWindow(TyWidgetObject* self)
-{
-	RECT rect;
-	TyWidget_CalculateRect(self, &rect);
-	if (MoveWindow(self->hWin, rect.left, rect.top, rect.right, rect.bottom, TRUE) == 0) {
-		PyErr_SetFromWindowsErr(0);
-		PyErr_Print();
-		return FALSE;
-	}
-	//EnumChildWindows(self->hWin, TyWidgetSizeEnumProc, (LPARAM)0);
-	return TRUE;
-}
 
 BOOL TyStatusBar_Reposition(TyStatusBarObject* self);
 BOOL CALLBACK
@@ -493,13 +482,19 @@ TyWidgetSizeEnumProc(HWND hwndChild, LPARAM lParam)
 	if (pyWidget == NULL)
 		return TRUE;
 	if (PyObject_TypeCheck((PyObject*)pyWidget, &TyMdiWindowType))
-		return FALSE;
+		return TRUE;
+	if (PyObject_TypeCheck(pyWidget, &TyToolBarType)) {
+		TyToolBar_Reposition(pyWidget);
+		return TRUE;
+	}
 	if (PyObject_TypeCheck(pyWidget, &TyStatusBarType)) {
 		TyStatusBar_Reposition(pyWidget);
 		return TRUE;
 	}
 	if (IsWindow(pyWidget->hWin)) {
-		return TyWidget_MoveWindow(pyWidget);
+		if (!TyWidget_MoveWindow(pyWidget)) {
+			PyErr_Print();
+		}
 	}
 	return TRUE;
 }
@@ -507,13 +502,17 @@ TyWidgetSizeEnumProc(HWND hwndChild, LPARAM lParam)
 BOOL
 TyWidget_CalculateRect(TyWidgetObject* self, _Out_ PRECT rcAbs)
 {
-	RECT rcRel = self->rc;
-	RECT rcParent;
+	RECT rcParent, rcRel = self->rc;
 	BOOL bSucess;
+
 	if (PyObject_TypeCheck((PyObject*)self, &TyWindowType))
+	{
 		bSucess = GetClientRect(GetDesktopWindow(), &rcParent);
+	}
 	else
+	{
 		bSucess = GetClientRect(self->hwndParent, &rcParent);
+	}
 	if (!bSucess) {
 		PyErr_SetFromWindowsErr(0);
 		return FALSE;

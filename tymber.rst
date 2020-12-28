@@ -164,6 +164,7 @@ Window
     .. attribute:: visible
 
         By default :const:`True`.
+        
 
     .. attribute:: children
 
@@ -180,10 +181,38 @@ Window
     .. attribute:: icon
 
         :class:`Icon`
+        
+    .. attribute:: tool_bar
+
+        :class:`ToolBar`  
+        
+    .. attribute:: status_bar
+
+        :class:`StatusBar`
 
     .. attribute:: before_close
 
         Callback. If it returns *False* the window will stay open.
+        
+    .. attribute:: on_close
+
+        Callback when closing.
+        
+    .. attribute:: focus
+
+        Widget holding the focus.
+        
+    .. attribute:: on_focus_change
+
+        Callback when focus was moved to new widget.
+        
+   .. attribute:: min_width
+
+      Minimum width
+      
+   .. attribute:: min_height
+
+      Minimum height
 
     .. method:: run()
 
@@ -192,6 +221,7 @@ Window
     .. method:: close()
 
         Hide the window and, if run modal, return from *run*.
+        (Does not destroy it).
         
 
 .. _tymber-class-widget:
@@ -582,7 +612,10 @@ MenuItem
     *caption* must be a str to be displayed in the menu,
 
     *on_click* is the callback to be triggered on selection
-    
+
+    .. attribute:: enabled
+
+        If False the MenuItem is grayed.    
 
 
 .. _tymber-class-tool-bar:
@@ -603,6 +636,12 @@ ToolBar
         *item* must be a :class:`MenuItem`
 
     .. method:: append_separator()
+    
+        Adds a separator line
+
+    .. method:: set_enabled(item, enabled)
+
+        *item* must be a :class:`MenuItem`. If *enabled* is False the button is grayed.
       
         
         
@@ -676,6 +715,11 @@ ListView
         Callback when a row was selected.
         Parameters: widget
 
+    .. attribute:: on_double_click
+
+        Callback when a row was double clicked.
+        Parameters: widget, index
+
 
     .. method:: add_row(data[, index])
 
@@ -714,6 +758,26 @@ MdiArea
 
     Can hold :class:`MdiWindow` objects.
     
+    .. method:: tile()
+
+        Arrange child windows in tile format.
+        
+    .. attribute:: active_child
+
+        Child window that has the focus
+        
+    .. attribute:: on_activated
+
+        Callback when new child was activated
+        
+    .. attribute:: maximized
+
+        Child windows are shown maximized        
+        
+    .. attribute:: menu
+
+        Menu to hold windows
+    
     
 .. _tymber-class-mdi-window:
 
@@ -723,3 +787,11 @@ MdiWindow
 .. class:: MdiWindow()
 
     A window to be displayed inside an :class:`MdiArea`
+        
+    .. attribute:: parent
+
+        MdiArea that holds the MdiWindow      
+
+    .. method:: close()
+
+        Remove the window from the parent's *children* collection (and consequently destroy it).

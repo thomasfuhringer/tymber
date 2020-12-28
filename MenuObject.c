@@ -56,7 +56,6 @@ TyMenu_init(TyMenuObject* self, PyObject* args, PyObject* kwds)
 			PyErr_SetFromWindowsErr(0);
 			return -1;
 		}
-		//SendMessage(((TyWindowObject*)((TyApplicationObject*)self->pyParent)->pyWindow)->hWin, WM_SIZE, 0, 0);
 
 		if (!DrawMenuBar(((TyWindowObject*)((TyApplicationObject*)self->pyParent)->pyWindow)->hWin)) {
 			PyErr_SetFromWindowsErr(0);
@@ -64,10 +63,6 @@ TyMenu_init(TyMenuObject* self, PyObject* args, PyObject* kwds)
 		}
 
 		TyAttachObject(&((TyApplicationObject*)self->pyParent)->pyMenu, self);
-		//TyWidget_MoveWindow(((TyWidgetObject*)((TyApplicationObject*)self->pyParent)->pyWindow));
-		//UpdateWindow(((TyWindowObject*)((TyApplicationObject*)self->pyParent)->pyWindow)->hWin);
-		//SendMessage(((TyWindowObject*)((TyApplicationObject*)self->pyParent)->pyWindow)->hWin, WM_SIZE, 0, 0);
-		//EnumChildWindows(((TyWindowObject*)((TyApplicationObject*)self->pyParent)->pyWindow)->hWin, TyWidgetSizeEnumProc, (LPARAM)0);
 	}
 	else if (PyObject_TypeCheck(self->pyParent, &TyMenuType)) {
 
@@ -240,6 +235,11 @@ TyMenuItem_init(TyMenuItemObject* self, PyObject* args, PyObject* kwds)
 		return -1;
 	}
 
+	if (PyDict_Contains(((TyMenuObject*)self->pyParent)->pyItems, self->pyKey)) {
+		PyErr_SetString(PyExc_RuntimeError, "The parent Menu already contains an item with this key.");
+		return -1;
+	}
+
 	if (!PyUnicode_Check(self->pyKey)) {
 		PyErr_Format(PyExc_TypeError, "Parameter 2 ('key') must be a string, not '%.200s'.", self->pyKey->ob_type->tp_name);
 		return -1;
@@ -274,8 +274,12 @@ TyMenuItem_init(TyMenuItemObject* self, PyObject* args, PyObject* kwds)
 		return -1;
 	}
 	HFree(szCaption);
-
 	DrawMenuBar(((TyWindowObject*)TyMenu_GetWindow(self->pyParent))->hWin);
+
+	if (PyDict_SetItem(((TyMenuObject*)self->pyParent)->pyItems, self->pyKey, self) == -1) {
+		PyErr_SetFromWindowsErr(0);
+		return -1;
+	}
 
 	if (self->pyIcon) {
 		if (!PyObject_TypeCheck(self->pyIcon, &TyIconType)) {
@@ -298,6 +302,18 @@ TyMenuItem_init(TyMenuItemObject* self, PyObject* args, PyObject* kwds)
 	return 0;
 }
 
+static int
+TyMenuItem_setattro(TyMenuItemObject* self, PyObject* pyAttributeName, PyObject* pyValue)
+{
+	if (PyUnicode_Check(pyAttributeName)) {
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "enabled") == 0) {
+			EnableMenuItem(self->pyParent->hWin, self->iIdentifier, PyObject_IsTrue(pyValue) ? MF_ENABLED : MF_GRAYED);
+			return  0;
+		}
+	}
+	return Py_TYPE(self)->tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
+}
+
 static void
 TyMenuItem_dealloc(TyMenuItemObject* self)
 {
@@ -312,16 +328,16 @@ TyMenuItem_dealloc(TyMenuItemObject* self)
 static PyMemberDef TyMenuItem_members[] = {
 	{ "caption", T_OBJECT, offsetof(TyMenuItemObject, pyCaption), READONLY, "Caption" },
 	{ "on_click", T_OBJECT, offsetof(TyMenuItemObject, pyOnClickCB), READONLY, "'on_click' callback" },
-	{ NULL }  /* Sentinel */
+	{ NULL }
 };
 
 static PyMethodDef TyMenuItem_methods[] = {
-	{ NULL }  /* Sentinel */
+	{ NULL }
 };
 
 PyTypeObject TyMenuItemType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"tymber.MenuItem",           /* tp_name */
+	"tymber.MenuItem",         /* tp_name */
 	sizeof(TyMenuItemObject),  /* tp_basicsize */
 	0,                         /* tp_itemsize */
 	(destructor)TyMenuItem_dealloc, /* tp_dealloc */
@@ -337,7 +353,7 @@ PyTypeObject TyMenuItemType = {
 	0,                         /* tp_call */
 	0,                         /* tp_str */
 	0,                         /* tp_getattro */
-	0,                         /* tp_setattro */
+	TyMenuItem_setattro,       /* tp_setattro */
 	0,                         /* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,        /* tp_flags */
 	"MenuItem object",         /* tp_doc */
@@ -361,7 +377,7 @@ PyTypeObject TyMenuItemType = {
 };
 
 void
-Bitmap_SwapBackgroundColor(HBITMAP hbmp)
+Bitmap_SwapBackgroundColor(HBITMAP hbmp) // buggy
 {
 	if (!hbmp)
 		return;

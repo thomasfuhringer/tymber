@@ -18,7 +18,6 @@ typedef struct _TyCanvasObject
 	GpStringFormat* pStringFormat;
 	GpPen* pPen;
 	GpBrush* pBrush;
-	PyObject* pyOnPaintCB;
 	PyObject* pyOnResizeCB;
 	PyObject* pyOnLMouseUpCB;
 	PyObject* pyOnLMouseDownCB;

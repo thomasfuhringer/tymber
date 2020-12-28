@@ -98,7 +98,7 @@ TyButton_getattro(TyButtonObject* self, PyObject* pyAttributeName)
 
 static PyMemberDef TyButton_members[] = {
 	{ "on_click", T_OBJECT_EX, offsetof(TyButtonObject, pyOnClickCB), READONLY, "On Click callback" },
-	{ NULL }  /* Sentinel */
+	{ NULL }
 };
 
 static PyMethodDef TyButton_methods[] = {
@@ -148,32 +148,32 @@ PyTypeObject TyButtonType = {
 };
 
 static LRESULT CALLBACK
-TyButtonProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+TyButtonProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	TyButtonObject* self = (TyButtonObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-	if (self) {
-		switch (msg)
+	switch (uMsg)
+	{
+	case OCM_COMMAND:
+		switch (HIWORD(wParam))
 		{
-		case OCM_COMMAND:
-			switch (HIWORD(wParam))
-			{
-			case BN_CLICKED:
-				if (!TyButton_OnClick(self))
-					PyErr_Print();
-				return 0;
-			}
-			break;
-
-		case WM_KEYDOWN:
-			if (wParam == VK_RETURN) {
-				if (!TyButton_OnClick(self))
-					PyErr_Print();
-			}
-			break;
-
-		default:
-			break;
+		case BN_CLICKED:
+			if (!TyButton_OnClick(self))
+				PyErr_Print();
+			return 0;
 		}
+		break;
+
+	case WM_KEYDOWN:
+		if (wParam == VK_RETURN) {
+			if (!TyButton_OnClick(self))
+				PyErr_Print();
+		}
+		break;
+
+	default:
+		break;
 	}
-	return CallWindowProc(self->fnOldWinProcedure, hwnd, msg, wParam, lParam);
+	//if (uMsg >= OCM__BASE)
+	//	uMsg -= OCM__BASE;
+	return CallWindowProc(self->fnOldWinProcedure, hwnd, uMsg, wParam, lParam);
 }

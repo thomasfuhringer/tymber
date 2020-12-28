@@ -158,13 +158,13 @@ TyComboBox_getattro(TyComboBoxObject* self, PyObject* pyAttributeName)
 	if (pyResult == NULL && PyErr_ExceptionMatches(PyExc_AttributeError) && PyUnicode_Check(pyAttributeName)) {
 		// for later
 	}
-	return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
+	return TyComboBoxType.tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
 
 static void
 TyComboBox_dealloc(TyComboBoxObject* self)
 {
-	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
+	TyComboBoxType.tp_base->tp_dealloc((PyObject*)self);
 }
 
 static PyMemberDef TyComboBox_members[] = {

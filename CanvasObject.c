@@ -11,7 +11,6 @@ TyCanvas_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 	if (self != NULL) {
 		self->iActiveBuffer = 0;
 		self->iLiveBuffer = 0;
-		//self->pyOnPaintCB = NULL;
 		self->pyOnResizeCB = NULL;
 		self->pyOnLMouseUpCB = NULL;
 		self->pyOnLMouseDownCB = NULL;
@@ -282,10 +281,14 @@ TyCanvas_DeleteBuffer(TyCanvasObject* self, int iBuffer)
 		status = GdipDeleteGraphics(self->pGraphics[iBuffer]);
 		if (Ok != status) {
 			PyErr_Format(PyExc_TypeError, "Cannot delete Graphics.");
-			return NULL;
+			return FALSE;
+		}
+		if (!DeleteObject(self->hBM[iBuffer])) {
+			PyErr_SetFromWindowsErr(0);
+			return FALSE;
 		}
 
-		if (!DeleteDC(self->hDC[iBuffer]) || !DeleteObject(self->hBM[iBuffer])) {
+		if (!DeleteDC(self->hDC[iBuffer])) {
 			PyErr_SetFromWindowsErr(0);
 			return FALSE;
 		}
@@ -293,17 +296,17 @@ TyCanvas_DeleteBuffer(TyCanvasObject* self, int iBuffer)
 	return TRUE;
 }
 
-
 static BOOL
 TyCanvas_RenewBuffer(TyCanvasObject* self, int iBuffer, int iWidth, int iHeight)
 {
 	if (!TyCanvas_DeleteBuffer(self, iBuffer))
 		return FALSE;
 
-	Graphics pGraphicsOld;
-	HBITMAP hOld;
-
 	HDC hDC = GetDC(self->hWin);
+	if (hDC == 0) {
+		PyErr_SetFromWindowsErr(0);
+		return FALSE;
+	}
 	self->hBM[iBuffer] = CreateCompatibleBitmap(hDC, iWidth, iHeight);
 	self->hDC[iBuffer] = CreateCompatibleDC(hDC);
 	SelectObject(self->hDC[iBuffer], self->hBM[iBuffer]);
@@ -312,7 +315,6 @@ TyCanvas_RenewBuffer(TyCanvasObject* self, int iBuffer, int iWidth, int iHeight)
 	ReleaseDC(self->hWin, hDC);
 	return TRUE;
 }
-
 
 static PyObject*
 TyCanvas_renew_buffer(TyCanvasObject* self, PyObject* args)
@@ -327,6 +329,7 @@ TyCanvas_renew_buffer(TyCanvasObject* self, PyObject* args)
 
 	if (!TyCanvas_RenewBuffer(self, iBuffer, iWidth, iHeight))
 		return NULL;
+
 	Py_RETURN_NONE;
 }
 
@@ -526,7 +529,6 @@ static PyMemberDef TyCanvas_members[] = {
 	{ "on_mouse_wheel", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnMouseWheelCB), 0, "On mouse wheel rotated callback" },
 	{ "on_l_button_down", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnLMouseDownCB), 0, "On left mouse button down callback" },
 	{ "on_l_button_up", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnLMouseUpCB), 0, "On left mouse button up callback" },
-	//{ "on_paint", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnPaintCB), 0, "Callback when (part of the) widget is repainted" },
 	{ "on_resize", T_OBJECT_EX, offsetof(TyCanvasObject, pyOnResizeCB), 0, "Callback when size changed" },
 	{ NULL }
 };
@@ -631,21 +633,21 @@ LRESULT CALLBACK TyCanvasWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			SetBkMode(hDC, TRANSPARENT);
 			BitBlt(hDC, 0, 0, self->rcClient.right, self->rcClient.bottom, self->hDC[self->iLiveBuffer], 0, 0, SRCCOPY);
 			EndPaint(self->hWin, &ps);
-
 			return 0;
 		}
 
 		case WM_SIZE:
-			GetClientRect(self->hWin, &self->rcClient);
+			self->rcClient.right = LOWORD(lParam);
+			self->rcClient.bottom = HIWORD(lParam);
 			if (self->pyOnResizeCB) {
 				pyResult = PyObject_CallFunction(self->pyOnResizeCB, "(O)", self);
 				if (pyResult == NULL) {
 					PyErr_Print();
-					//MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
 				}
 				else Py_DECREF(pyResult);
 			}
-			break;
+			//break;
+			return 0;
 
 		case WM_ERASEBKGND:
 			return 1;
@@ -655,7 +657,7 @@ LRESULT CALLBACK TyCanvasWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				pyResult = PyObject_CallFunction(self->pyOnLMouseDownCB, "(Oii)", self, LOWORD(lParam), HIWORD(lParam));
 				if (pyResult == NULL) {
 					PyErr_Print();
-					MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+					MessageBox(NULL, L"Error in on_l_mouse_down callback", L"Error", MB_ICONERROR);
 				}
 				else
 					Py_DECREF(pyResult);
@@ -667,7 +669,7 @@ LRESULT CALLBACK TyCanvasWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				pyResult = PyObject_CallFunction(self->pyOnLMouseUpCB, "(Oii)", self, LOWORD(lParam), HIWORD(lParam));
 				if (pyResult == NULL) {
 					PyErr_Print();
-					MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+					MessageBox(NULL, L"Error in on_l_mouse_up callback", L"Error", MB_ICONERROR);
 				}
 				else
 					Py_DECREF(pyResult);
@@ -679,7 +681,7 @@ LRESULT CALLBACK TyCanvasWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				pyResult = PyObject_CallFunction(self->pyOnMouseMoveCB, "(Oii)", self, LOWORD(lParam), HIWORD(lParam));
 				if (pyResult == NULL) {
 					PyErr_Print();
-					MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+					MessageBox(NULL, L"Error in  on_mouse_move callback", L"Error", MB_ICONERROR);
 				}
 				else
 					Py_DECREF(pyResult);
@@ -695,19 +697,12 @@ LRESULT CALLBACK TyCanvasWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				pyResult = PyObject_CallFunction(self->pyOnMouseWheelCB, "(Oiii)", self, GET_WHEEL_DELTA_WPARAM(wParam), pt.x, pt.y);
 				if (pyResult == NULL) {
 					PyErr_Print();
-					MessageBox(NULL, L"Error in Python script", L"Error", MB_ICONERROR);
+					MessageBox(NULL, L"Error in  on_mouse_wheel callback", L"Error", MB_ICONERROR);
 				}
 				else
 					Py_DECREF(pyResult);
 			}
 			return 0L;
-		}
-
-		// pick the right DefXxxProcW
-		if (PyObject_TypeCheck((PyObject*)self, &TyMdiWindowType))
-			return DefMDIChildProcW(hwnd, uMsg, wParam, lParam);
-		if (PyObject_TypeCheck((PyObject*)self, &TyWindowType) && ((TyWindowObject*)self)->hMdiArea) {
-			return DefFrameProcW(hwnd, ((TyWindowObject*)self)->hMdiArea, uMsg, wParam, lParam);
 		}
 	}
 	return DefWindowProcW(hwnd, uMsg, wParam, lParam);

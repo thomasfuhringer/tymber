@@ -38,9 +38,7 @@ TyTab_init(TyTabObject* self, PyObject* args, PyObject* kwds)
 
 	SendMessage(self->hWin, WM_SETFONT, (WPARAM)g->hfDefaultFont, MAKELPARAM(FALSE, 0));
 	self->fnOldWinProcedure = (WNDPROC)SetWindowLongPtrW(self->hWin, GWLP_WNDPROC, (LONG_PTR)TyTabProc);
-
 	SetWindowLongPtr(self->hWin, GWLP_USERDATA, (LONG_PTR)self);
-
 	return 0;
 }
 
@@ -69,6 +67,11 @@ TyTab_getattro(TyTabObject* self, PyObject* pyAttributeName)
 			Py_INCREF(pyAttribute);
 			return pyAttribute;
 		}
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "children") == 0) {
+			PyErr_Clear();
+			Py_INCREF(self->pyChildren);
+			return self->pyChildren;
+		}
 	}
 	return TyTabType.tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
@@ -78,11 +81,11 @@ TyTab_dealloc(TyTabObject* self)
 {
 	Py_DECREF(self->pyChildren);
 	DestroyWindow(self->hWin);
-	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
+	TyTabType.tp_base->tp_dealloc((PyObject*)self);
 }
 
 static PyMemberDef TyTab_members[] = {
-	{ "children", T_OBJECT, offsetof(TyTabObject, pyChildren), READONLY, "Tab pages" },
+	//{ "children", T_OBJECT, offsetof(TyTabObject, pyChildren), READONLY, "Tab pages" },
 	{ NULL }
 };
 
@@ -185,7 +188,6 @@ TyTabPage_init(TyTabPageObject* self, PyObject* args, PyObject* kwds)
 		PyErr_Format(PyExc_TypeError, "Argument 'parent' must be a Tab, not '%.200s'.", ((PyObject*)self->pyParent)->ob_type->tp_name);
 		return -1;
 	}
-
 	TCITEM tie;
 	tie.mask = TCIF_TEXT | TCIF_IMAGE;
 	tie.iImage = -1;
@@ -236,12 +238,7 @@ TyTabPage_getattro(TyApplicationObject* self, PyObject* pyAttributeName)
 	PyObject* pyResult, * pyAttribute;
 	pyResult = PyObject_GenericGetAttr((PyObject*)self, pyAttributeName);
 	if (pyResult == NULL && PyErr_ExceptionMatches(PyExc_AttributeError) && PyUnicode_Check(pyAttributeName)) {
-		if (PyDict_Contains(self->pyChildren, pyAttributeName)) {
-			PyErr_Clear();
-			pyAttribute = PyDict_GetItem(self->pyChildren, pyAttributeName);
-			Py_INCREF(pyAttribute);
-			return pyAttribute;
-		}
+
 	}
 	return TyTabPageType.tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
@@ -249,11 +246,10 @@ TyTabPage_getattro(TyApplicationObject* self, PyObject* pyAttributeName)
 static void
 TyTabPage_dealloc(TyTabPageObject* self)
 {
-	Py_TYPE(self)->tp_base->tp_dealloc((TyTabPageObject*)self);
+	TyTabPageType.tp_base->tp_dealloc((TyTabPageObject*)self);
 }
 
 static PyMemberDef TyTabPage_members[] = {
-	{ "children", T_OBJECT, offsetof(TyTabPageObject, pyChildren), READONLY, "Child widgets" },
 	{ NULL }
 };
 

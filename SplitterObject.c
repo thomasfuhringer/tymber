@@ -4,7 +4,7 @@
 static LRESULT CALLBACK TySplitterProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static int TySplitter_ResizeBoxes(TySplitterObject* self);
 
-static PyObject *
+static PyObject*
 TySplitter_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
 	TySplitterObject* self = TySplitterType.tp_base->tp_new(type, args, kwds);
@@ -12,6 +12,7 @@ TySplitter_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 		self->bVertical = TRUE;
 		self->iPosition = 100;
 		self->iSpacing = 4;
+		self->bSplitterMoving = FALSE;
 		return (PyObject*)self;
 	}
 	else
@@ -26,18 +27,16 @@ TySplitter_init(TySplitterObject* self, PyObject* args, PyObject* kwds)
 	if (TySplitterType.tp_base->tp_init((PyObject*)self, args, kwds) < 0)
 		return -1;
 
-	PyObject* pyArgList = Py_BuildValue("Os", (PyObject*)self, "box1");
-	self->pyBox1 = PyObject_CallObject((PyObject*)&TyBoxType, pyArgList);
+	self->pyBox1 = PyObject_CallFunction((PyObject*)&TyBoxType, "Os", (PyObject*)self, "box1");
 	if (self->pyBox1 == NULL)
 		return -1;
-	Py_DECREF(pyArgList);
+	Py_DECREF(self->pyBox1); // only reference kept in pyChildren
 	//SetWindowLongPtr(self->pyBox1->hWin, GWL_EXSTYLE, WS_EX_CLIENTEDGE);
 
-	pyArgList = Py_BuildValue("Os", (PyObject*)self, "box2");
-	self->pyBox2 = PyObject_CallObject((PyObject*)&TyBoxType, pyArgList);
+	self->pyBox2 = PyObject_CallFunction((PyObject*)&TyBoxType, "Os", (PyObject*)self, "box2");
 	if (self->pyBox2 == NULL)
 		return -1;
-	Py_DECREF(pyArgList);
+	Py_DECREF(self->pyBox2);
 	//SetWindowLongPtr(self->pyBox2->hWin, GWL_EXSTYLE, WS_EX_CLIENTEDGE);
 	TySplitter_ResizeBoxes(self);
 
@@ -68,11 +67,11 @@ TySplitter_setattro(TySplitterObject* self, PyObject* pyAttributeName, PyObject*
 	return Py_TYPE(self)->tp_base->tp_setattro((TyWidgetObject*)self, pyAttributeName, pyValue);
 }
 
-static PyObject *
+static PyObject*
 TySplitter_getattro(TySplitterObject* self, PyObject* pyAttributeName)
 {
 	PyObject* pyResult;
-	pyResult = PyObject_GenericGetAttr((PyObject *)self, pyAttributeName);
+	pyResult = PyObject_GenericGetAttr((PyObject*)self, pyAttributeName);
 	if (pyResult == NULL && PyErr_ExceptionMatches(PyExc_AttributeError) && PyUnicode_Check(pyAttributeName)) {
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "position") == 0) {
 			PyErr_Clear();
@@ -90,8 +89,8 @@ TySplitter_getattro(TySplitterObject* self, PyObject* pyAttributeName)
 static int
 TySplitter_ResizeBoxes(TySplitterObject* self)
 {
-	self->pyBox1->rc = (RECT) { 0, 0, self->bVertical ? self->iPosition - self->iSpacing / 2 : 0, self->bVertical ? 0 : self->iPosition - self->iSpacing / 2 };
-	self->pyBox2->rc = (RECT) { self->bVertical ? self->iPosition + self->iSpacing / 2 : 0, self->bVertical ? 0 : self->iPosition + self->iSpacing / 2, 0, 0 };
+	self->pyBox1->rc = (RECT){ 0, 0, self->bVertical ? self->iPosition - self->iSpacing / 2 : 0, self->bVertical ? 0 : self->iPosition - self->iSpacing / 2 };
+	self->pyBox2->rc = (RECT){ self->bVertical ? self->iPosition + self->iSpacing / 2 : 0, self->bVertical ? 0 : self->iPosition + self->iSpacing / 2, 0, 0 };
 	EnumChildWindows(self->hWin, TyWidgetSizeEnumProc, 0);
 	return 0;
 }
@@ -99,12 +98,11 @@ TySplitter_ResizeBoxes(TySplitterObject* self)
 static void
 TySplitter_dealloc(TySplitterObject* self)
 {
-	Py_XDECREF(self->pyChildren);
-	Py_TYPE(self)->tp_base->tp_dealloc((TyWidgetObject*)self);
+	TySplitterType.tp_base->tp_dealloc((TyWidgetObject*)self);
 }
 
 static PyMemberDef TySplitter_members[] = {
-	{ "children", T_OBJECT, offsetof(TySplitterObject, pyChildren), READONLY, "Child boxes" },
+	//{ "children", T_OBJECT, offsetof(TySplitterObject, pyChildren), READONLY, "Child boxes" },
 	{ "box1", T_OBJECT_EX, offsetof(TySplitterObject, pyBox1), READONLY, "Box 1 widget (for use as parent)" },
 	{ "box2", T_OBJECT_EX, offsetof(TySplitterObject, pyBox2), READONLY, "Box 2 widget (for use as parent)" },
 	{ "vertical", T_BOOL, offsetof(TySplitterObject, bVertical), READONLY, "Split vertically." },
@@ -159,7 +157,6 @@ PyTypeObject TySplitterType = {
 static LRESULT CALLBACK
 TySplitterProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	static BOOL	bSplitterMoving = FALSE;
 	TySplitterObject* self = (TySplitterObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
 	switch (uMsg)
@@ -169,7 +166,7 @@ TySplitterProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			SetCursor(self->bVertical ? g->hCursorWestEast : g->hCursorNorthSouth);
 			RECT rect;
-			if ((wParam == MK_LBUTTON) && bSplitterMoving) {
+			if ((wParam == MK_LBUTTON) && self->bSplitterMoving) {
 				if (self->bVertical) {
 					GetClientRect(hwnd, &rect);
 					if (LOWORD(lParam) > rect.right)
@@ -188,13 +185,13 @@ TySplitterProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	case WM_LBUTTONDOWN:
-		bSplitterMoving = TRUE;
+		self->bSplitterMoving = TRUE;
 		SetCapture(hwnd);
 		return 0;
 
 	case WM_LBUTTONUP:
 		ReleaseCapture();
-		bSplitterMoving = FALSE;
+		self->bSplitterMoving = FALSE;
 		return 0;
 	}
 	return CallWindowProc(self->fnOldWinProcedure, hwnd, uMsg, wParam, lParam);

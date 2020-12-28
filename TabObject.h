@@ -16,9 +16,8 @@ extern PyTypeObject TyTabType;
 
 typedef struct _TyTabPageObject
 {
-	TyWidgetObject_HEAD
-		PyObject* pyChildren;
-	int iIndex;
+	TyBoxObject_HEAD
+		int iIndex;
 }
 TyTabPageObject;
 

@@ -74,15 +74,13 @@ TyLabel_setattro(TyLabelObject* self, PyObject* pyAttributeName, PyObject* pyVal
 				break;
 			}
 			SetWindowLongPtr(self->hWin, GWL_STYLE, pAlign);
-			self->pyAlignHorizontal = pyValue;
-			Py_DECREF(pyAlign);
+			TyAttachObject(&self->pyAlignVertical, pyAlign);
 			return 0;
 		}
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "align_v") == 0) {
-
 			LONG_PTR pAlign = GetWindowLongPtr(self->hWin, GWL_STYLE);
-
-			switch (PyLong_AsLong(PyObject_GetAttrString(pyValue, "value")))
+			PyObject* pyAlign = PyObject_GetAttrString(pyValue, "value");
+			switch (PyLong_AsLong(pyAlign))
 			{
 			case ALIGN_TOP:
 				//pAlign = pAlign | SS_TOP ; 
@@ -95,7 +93,7 @@ TyLabel_setattro(TyLabelObject* self, PyObject* pyAttributeName, PyObject* pyVal
 				break;
 			}
 			SetWindowLongPtr(self->hWin, GWL_STYLE, pAlign);
-			self->pyAlignVertical = pyValue;
+			TyAttachObject(&self->pyAlignVertical, pyAlign);
 			return 0;
 		}
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "text_color") == 0) {
@@ -123,7 +121,7 @@ TyLabel_setattro(TyLabelObject* self, PyObject* pyAttributeName, PyObject* pyVal
 			}
 		}
 	}
-	return Py_TYPE(self)->tp_base->tp_setattro((TyWidgetObject*)self, pyAttributeName, pyValue);
+	return TyLabelType.tp_base->tp_setattro((TyWidgetObject*)self, pyAttributeName, pyValue);
 }
 
 static PyObject*
@@ -143,13 +141,13 @@ TyLabel_getattro(TyLabelObject* self, PyObject* pyAttributeName)
 		}
 	}
 	Py_XDECREF(pyResult);
-	return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
+	return TyLabelType.tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
 
 static void
 TyLabel_dealloc(TyLabelObject* self)
 {
-	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
+	TyLabelType.tp_base->tp_dealloc((PyObject*)self);
 }
 
 static PyMemberDef TyLabel_members[] = {
@@ -221,6 +219,6 @@ TyLabelProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		default:
 			break;
 		}
+		return CallWindowProcW(self->fnOldWinProcedure, hwnd, msg, wParam, lParam);
 	}
-	return CallWindowProcW(self->fnOldWinProcedure, hwnd, msg, wParam, lParam);
 }

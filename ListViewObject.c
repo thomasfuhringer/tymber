@@ -295,6 +295,18 @@ TyListView_SelectionChanged(TyListViewObject* self, int iRow)
 }
 
 BOOL
+TyListView_DoubleClick(TyListViewObject* self, int iRow)
+{
+	if (self->pyOnDoubleClickCB) {
+		PyObject* pyResult = PyObject_CallFunction(self->pyOnDoubleClickCB, "(Oi)", self, iRow);
+		if (pyResult == NULL)
+			return FALSE;
+		Py_DECREF(pyResult);
+	}
+	return TRUE;
+}
+
+BOOL
 TyListView_SelectRow(TyListViewObject* self, Py_ssize_t nRow)
 {
 	ListView_SetItemState(self->hWin, nRow, LVIS_FOCUSED | LVIS_SELECTED, 0x000F);
@@ -388,14 +400,14 @@ TyListView_getattro(TyListViewObject* self, PyObject* pyAttributeName)
 				return PyLong_FromSize_t(self->nSelectedRow);
 		}
 	}
-	return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
+	return TyListViewType.tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
 
 static void
 TyListView_dealloc(TyListViewObject* self)
 {
 	Py_XDECREF(self->pyColumns);
-	Py_TYPE(self)->tp_base->tp_dealloc((TyWidgetObject*)self);
+	TyListViewType.tp_base->tp_dealloc((TyWidgetObject*)self);
 }
 
 static PyMemberDef TyListView_members[] = {
@@ -403,6 +415,7 @@ static PyMemberDef TyListView_members[] = {
 	{ "columns", T_OBJECT_EX, offsetof(TyListViewObject, pyColumns), READONLY, "List of column definitions" },
 	{ "on_row_changed", T_OBJECT_EX, offsetof(TyListViewObject, pyOnRowChangedCB), 0, "Callback when row was modified" },
 	{ "on_selection_changed", T_OBJECT_EX, offsetof(TyListViewObject, pyOnSelectionChangedCB), 0, "Callback when selected row changed" },
+	{ "on_double_click", T_OBJECT_EX, offsetof(TyListViewObject, pyOnDoubleClickCB), 0, "Callback when row was double clicked" },
 	{ NULL }
 };
 
@@ -474,6 +487,11 @@ TyListViewProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					if (!TyListView_SelectionChanged(self, pNMListView->iItem)) {
 						PyErr_Print();
 					}
+				}
+			}
+			if (nmhdr->code == NM_DBLCLK) {
+				if (!TyListView_DoubleClick(self, (int)SendMessage(self->hWin, LVM_GETNEXTITEM, -1, LVNI_SELECTED))) {
+					PyErr_Print();
 				}
 			}
 		}

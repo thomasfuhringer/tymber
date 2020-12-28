@@ -1,8 +1,6 @@
 ﻿// EntryObject.c  | Tymber © 2020 by Thomas Führinger
 #include "Tymber.h"
 
-#define TyENTRY_BUTTON_WIDTH  18
-
 static PyObject*
 TyEntry_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
@@ -17,7 +15,6 @@ TyEntry_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 	else
 		return NULL;
 }
-
 
 BOOL
 TyEntry_CreateEditControl(TyEntryObject* self)
@@ -54,7 +51,7 @@ TyEntry_init(TyEntryObject* self, PyObject* args, PyObject* kwds)
 	if (Py_TYPE(self)->tp_base->tp_init((PyObject*)self, args, kwds) < 0)
 		return -1;
 
-	if (!TyEntry_CreateEditControl(self, FALSE) < 0)
+	if (!TyEntry_CreateEditControl(self) < 0)
 		return -1;
 
 	return 0;
@@ -100,7 +97,7 @@ TyEntry_SetData(TyEntryObject* self, PyObject* pyData)
 static PyObject*
 TyEntry_get_input_string(TyEntryObject* self)
 {
-	TCHAR szText[1024];
+	WCHAR szText[1024];
 	PyObject* pyInput;
 	GetWindowText(self->hWin, szText, 1024);
 	char* strText = toU8(szText);
@@ -115,7 +112,7 @@ TyEntry_get_input_string(TyEntryObject* self)
 static PyObject*  // new ref
 TyEntry_get_input_data(TyEntryObject* self)
 {
-	TCHAR szText[1024];
+	WCHAR szText[1024];
 	PyObject* pyData;
 	int iLen = GetWindowText(self->hWin, szText, 1024);
 	if (iLen == 0)
@@ -153,8 +150,12 @@ TyEntry_FocusOut(TyEntryObject* self)
 {
 	if (!self->bReadOnly && !TyEntry_Parse(self)) {
 		if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+			PyObject* pyType, * pyValue, * pyTraceback;
+			PyErr_Fetch(&pyType, &pyValue, &pyTraceback);
+			LPWSTR szText = toW(PyUnicode_AsUTF8(pyValue));
+			MessageBox(0, szText, L"Invalid Input", 0);
+			PyMem_RawFree(szText);
 			PyErr_Clear();
-			MessageBox(0, L"Invalid Input", L"Error", 0);
 			SetFocus(self->hWin);
 			return TRUE;
 		}
@@ -280,13 +281,15 @@ TyEntry_getattro(TyEntryObject* self, PyObject* pyAttributeName)
 			return TyEntry_get_input_data(self);
 		}
 	}
-	return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
+	return TyEntryType.tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
 
 static void
 TyEntry_dealloc(TyEntryObject* self)
 {
-	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
+	Py_XDECREF(self->pyOnLeaveCB);
+	Py_XDECREF(self->pyOnKeyCB);
+	TyEntryType.tp_base->tp_dealloc((PyObject*)self);
 }
 
 static PyMemberDef TyEntry_members[] = {
@@ -350,12 +353,12 @@ TyEntryProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	TyEntryObject* self = (TyEntryObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	PyObject* pyKey;
+	TyWidgetObject* pyWidget;
 
 	if (self) {
 		switch (msg)
 		{
 		case WM_KEYDOWN:
-			//printf("WM_KEYDOWN %p \n", wParam);
 			if (self->pyOnKeyCB) {
 				pyKey = PyObject_CallFunction(g->pyKeyEnum, "(i)", wParam);
 				if (pyKey != NULL) {
@@ -383,9 +386,28 @@ TyEntryProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			}*/
 			break;
 
+		case OCM_COMMAND:
+			switch (HIWORD(wParam))
+			{
+			case EN_SETFOCUS:
+				if (!TyWidget_FocusIn(self))
+					PyErr_Print();
+				break;
+
+			case EN_KILLFOCUS:
+				if (!TyWidget_FocusOut(self))
+					PyErr_Print();
+				break;
+			}
+			break;
+
 		default:
 			break;
 		};
 	}
+
+	//if (msg >= OCM__BASE)
+	//	msg -= OCM__BASE;
+
 	return CallWindowProc(self->fnOldWinProcedure, hwnd, msg, wParam, lParam);
 }

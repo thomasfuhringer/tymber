@@ -78,7 +78,7 @@ TyImageView_setattro(TyImageViewObject* self, PyObject* pyAttributeName, PyObjec
 			return 0;
 		}
 	}
-	return Py_TYPE(self)->tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
+	return TyImageViewType.tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
 }
 
 static PyObject*
@@ -89,14 +89,14 @@ TyImageView_getattro(TyImageViewObject* self, PyObject* pyAttributeName)
 	if (pyResult == NULL && PyErr_ExceptionMatches(PyExc_AttributeError) && PyUnicode_Check(pyAttributeName)) {
 		// for later
 	}
-	return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
+	return TyImageViewType.tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
 
 static void
 TyImageView_dealloc(TyImageViewObject* self)
 {
 	DestroyWindow(self->hWin);
-	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
+	TyImageViewType.tp_base->tp_dealloc((PyObject*)self);
 }
 
 static PyMemberDef TyImageView_members[] = {
@@ -319,12 +319,12 @@ LRESULT CALLBACK TyImageViewWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			return 0;
 		}
 
-		// pick the right DefXxxProcW
-		if (PyObject_TypeCheck((PyObject*)self, &TyMdiWindowType))
-			return DefMDIChildProcW(hwnd, uMsg, wParam, lParam);
-		if (PyObject_TypeCheck((PyObject*)self, &TyWindowType) && ((TyWindowObject*)self)->hMdiArea) {
-			return DefFrameProcW(hwnd, ((TyWindowObject*)self)->hMdiArea, uMsg, wParam, lParam);
-		}
+		//// pick the right DefXxxProcW
+		//if (PyObject_TypeCheck((PyObject*)self, &TyMdiWindowType))
+		//	return DefMDIChildProcW(hwnd, uMsg, wParam, lParam);
+		//if (PyObject_TypeCheck((PyObject*)self, &TyWindowType) && ((TyWindowObject*)self)->hMdiArea) {
+		//	return DefFrameProcW(hwnd, ((TyWindowObject*)self)->hMdiArea, uMsg, wParam, lParam);
+		//}
 	}
 	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }

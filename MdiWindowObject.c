@@ -211,6 +211,10 @@ TyMdiWindow_dealloc(TyMdiWindowObject* self)
 	}
 	Py_XDECREF(self->pyBeforeCloseCB);
 	Py_XDECREF(self->pyOnCloseCB);
+	Py_XDECREF(self->pyOnFocusChangeCB);
+	Py_XDECREF(self->pyIcon);
+	Py_XDECREF(self->pyToolBar);
+	Py_XDECREF(self->pyStatusBar);
 	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 

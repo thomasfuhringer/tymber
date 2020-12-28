@@ -54,6 +54,13 @@ TyMdiArea_init(TyMdiAreaObject* self, PyObject* args, PyObject* kwds)
 	return 0;
 }
 
+static PyObject*
+TyMdiArea_tile(TyMdiAreaObject* self)
+{
+	SendMessage(self->hWin, WM_MDITILE, MDITILE_HORIZONTAL, 0);
+	Py_RETURN_NONE;
+}
+
 static int
 TyMdiArea_setattro(TyMdiAreaObject* self, PyObject* pyAttributeName, PyObject* pyValue)
 {
@@ -158,6 +165,7 @@ static PyMemberDef TyMdiArea_members[] = {
 };
 
 static PyMethodDef TyMdiArea_methods[] = {
+	{ "tile", (PyCFunction)TyMdiArea_tile, METH_NOARGS, "Arrange child windows in a tile format." },
 	{ NULL }
 };
 
