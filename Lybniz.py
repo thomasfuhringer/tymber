@@ -6,8 +6,6 @@ import tymber as ty, pickle
 from math import *
 version = "1.1"
 
-child_position = None # window position of last active MDI child window
-
 def file_exit_menu_item__on_click():
     ty.app.window.close()
 
@@ -273,11 +271,11 @@ def canvas__on_l_button_up(canvas, x, y):
                 x, x1 = x1, x
             if y > y1:
                 y, y1 = y1, y
-            data.x_min = data.graph_x(x1)
-            data.x_max = data.graph_x(x)
-            data.y_min = data.graph_y(y1)
-            data.y_max = data.graph_y(y)
-            data.populate_widgets()
+            app.window.entry_x_min.data = data.graph_x(x1)
+            app.window.entry_x_max.data = data.graph_x(x)
+            app.window.entry_y_min.data = data.graph_y(y1)
+            app.window.entry_y_max.data = data.graph_y(y)
+            data.glean()
             plot()
 
 def canvas__on_mouse_wheel(canvas, delta, x, y):
