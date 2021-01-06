@@ -15,6 +15,7 @@ TyWidget_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 		self->rc.bottom = 22;
 		self->bVisible = TRUE;
 		self->bReadOnly = FALSE;
+		self->bEnabled = TRUE;
 		self->pyWindow = NULL;
 		self->pyData = Py_None;
 		Py_INCREF(Py_None);
@@ -156,6 +157,11 @@ TyWidget_setattro(TyWidgetObject* self, PyObject* pyAttributeName, PyObject* pyV
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "visible") == 0) {
 			self->bVisible = PyObject_IsTrue(pyValue);
 			ShowWindow(self->hWin, self->bVisible ? SW_SHOW : SW_HIDE);
+			return  0;
+		}
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "enabled") == 0) {
+			self->bEnabled = PyObject_IsTrue(pyValue);
+			EnableWindow(self->hWin, self->bEnabled);
 			return  0;
 		}
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "frame") == 0) {
@@ -420,6 +426,7 @@ static PyMemberDef TyWidget_members[] = {
 	{ "tab_next", T_OBJECT, offsetof(TyWidgetObject, pyTabNext), READONLY, "Widget to jump to on tab" },
 	{ "on_changed", T_OBJECT, offsetof(TyWidgetObject, pyOnChangedCB), 0, "Call back when data has changed" },
 	{ "read_only", T_BOOL, offsetof(TyWidgetObject, bReadOnly), READONLY, "Data can not be edited." },
+	{ "enabled", T_BOOL, offsetof(TyWidgetObject, bEnabled), READONLY, "Widget not grayed" },
 	{ "align_h", T_OBJECT, offsetof(TyWidgetObject, pyAlignHorizontal), READONLY, "Horizontal alignment" },
 	{ "align_v", T_OBJECT, offsetof(TyWidgetObject, pyAlignVertical), READONLY, "Vertical alignment" },
 	{ NULL }

@@ -281,6 +281,10 @@ Widget
 
       By default :const:`True`
 
+   .. attribute:: enabled
+
+      If :const:`False` widget is grayed.
+
 
 .. _tymber-class-label:
 

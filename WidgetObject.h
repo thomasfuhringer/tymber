@@ -15,6 +15,7 @@
 		BOOL bVisible; \
 		WNDPROC fnOldWinProcedure; \
 		BOOL bReadOnly; \
+		BOOL bEnabled; \
 	    PyObject* pyCaption; \
 		PyObject* pyData; \
 		PyTypeObject* pyDataType; \
