@@ -19,7 +19,9 @@
 		PyObject* pyToolBar; \
 		int iToolBarHeight; \
 		PyObject* pyBeforeCloseCB; \
-		PyObject* pyOnCloseCB;
+		PyObject* pyOnCloseCB; \
+		HANDLE hTimer; \
+		PyObject* pyTimerCB;
 
 typedef struct _TyIconObject TyIconObject;
 typedef struct _TyWindowObject
@@ -33,6 +35,7 @@ typedef struct _TyWindowObject
 	TyIconObject* pyIcon;
 }
 TyWindowObject;
+
 
 extern PyTypeObject TyWindowType;
 BOOL WindowClass_Init();

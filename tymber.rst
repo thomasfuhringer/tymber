@@ -222,6 +222,18 @@ Window
 
         Hide the window and, if run modal, return from *run*.
         (Does not destroy it).
+
+    .. method:: set_timer(callback[, interval, wait])
+
+        Sets a timer to fire after *wait* seconds every *interval* seconds.
+
+    .. method:: del_timer()
+
+        Deletes the timer.
+
+    .. method:: key_pressed(key)
+
+        Returns True if *key* is pressed.
         
 
 .. _tymber-class-widget:

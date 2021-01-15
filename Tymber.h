@@ -50,11 +50,14 @@
 #define IDC_TYTOOLBAR  	       7110
 #define IDC_TYTAB   	       7111
 #define IDC_TYMDIAREA  	       7112
-#define IDC_TYSTATUSBAR	       7113 
+#define IDC_TYSTATUSBAR	       7113
+#define IDC_TYTEXTVIEW 	       7114
 
 #define IDM_WINDOWMENUPOS      3
 #define FIRST_CUSTOM_MENU_ID   700
 #define MAX_CUSTOM_MENU_ID     770
+
+#define WM_APP_TIMER (WM_APP + 1)
 
 #include <Python.h>
 #include <datetime.h>

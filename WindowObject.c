@@ -27,6 +27,8 @@ TyWindow_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 		self->pyBeforeCloseCB = NULL;
 		self->pyOnCloseCB = NULL;
 		self->hMdiArea = NULL;
+		self->hTimer = 0;
+		self->pyTimerCB = NULL;
 		return (PyObject*)self;
 	}
 	else
@@ -109,6 +111,72 @@ TyWindow_close(TyWindowObject* self)
 {
 	SendMessage(self->hWin, WM_CLOSE, (WPARAM)0, (LPARAM)0);
 	Py_RETURN_NONE;
+}
+
+static VOID CALLBACK
+TyWindow_TimerCB(PVOID lParam, BOOLEAN TimerOrWaitFired)
+{
+	TyWindowObject* self = lParam;
+	SendMessage(self->hWin, WM_APP_TIMER, (WPARAM)0, (LPARAM)0);
+}
+
+PyObject*
+TyWindow_set_timer(TyWindowObject* self, PyObject* args, PyObject* kwds)
+{
+	float fInterval = 0, fWait = 0;
+	static char* kwlist[] = { "callback", "interval", "wait", NULL };
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|ff", kwlist,
+		&self->pyTimerCB,
+		&fInterval,
+		&fWait))
+		return NULL;
+
+	if (!PyCallable_Check(self->pyTimerCB)) {
+		PyErr_SetString(PyExc_TypeError, "Argument 1 ('callback') must be callable.");
+		return NULL;
+	}
+	if (self->hTimer && DeleteTimerQueueTimer(NULL, self->hTimer, NULL) == 0) {
+		PyErr_SetFromWindowsErr(0);
+		return NULL;
+	}
+
+	Py_INCREF(self->pyTimerCB);
+	if (!CreateTimerQueueTimer(&self->hTimer, NULL, (WAITORTIMERCALLBACK)TyWindow_TimerCB, (PVOID)self, (DWORD)(fWait * 1000), (DWORD)(fInterval * 1000), WT_EXECUTEDEFAULT)) {
+		PyErr_SetFromWindowsErr(0);
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
+PyObject*
+TyWindow_del_timer(TyWindowObject* self)
+{
+	if (self->hTimer == 0)
+		Py_RETURN_NONE;
+
+	if (DeleteTimerQueueTimer(NULL, self->hTimer, NULL) == 0) {
+		PyErr_SetFromWindowsErr(0);
+		return NULL;
+	}
+	self->hTimer = 0;
+
+	Py_RETURN_NONE;
+}
+
+PyObject*
+TyWindow_key_pressed(TyWindowObject* self, PyObject* pyKey)
+{
+	PyObject* pyValue = PyObject_GetAttrString(pyKey, "value");
+	int iKey = PyLong_AsLong(pyValue);
+	SHORT pressed = GetAsyncKeyState(iKey);
+	Py_DECREF(pyValue);
+
+	if (pressed)
+		Py_RETURN_TRUE;
+	else
+		Py_RETURN_FALSE;
 }
 
 static int
@@ -277,7 +345,10 @@ static PyMemberDef TyWindow_members[] = {
 
 static PyMethodDef TyWindow_methods[] = {
 	{ "run", (PyCFunction)TyWindow_run, METH_NOARGS, "Run as dialog (modal)." },
+	{ "set_timer", (PyCFunction)TyWindow_set_timer, METH_VARARGS | METH_KEYWORDS, "Sets a fuction to be called at intervals." },
+	{ "del_timer", (PyCFunction)TyWindow_del_timer, METH_NOARGS, "Deletes the timer." },
 	{ "close", (PyCFunction)TyWindow_close, METH_NOARGS, "Hide and return from modal state." },
+	{ "key_pressed", (PyCFunction)TyWindow_key_pressed, METH_O, "True if key is pressed." },
 	{ NULL }
 };
 
@@ -399,6 +470,16 @@ TyWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
+
+		case WM_APP_TIMER:
+		{
+			pyResult = PyObject_CallObject(self->pyTimerCB, NULL);
+			if (pyResult == NULL)
+				PyErr_Print();
+			else
+				Py_DECREF(pyResult);
+			return 0;
+		}
 
 		case WM_QUERYENDSESSION:
 		case WM_CLOSE:

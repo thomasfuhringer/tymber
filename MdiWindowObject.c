@@ -116,6 +116,58 @@ TyMdiWindow_init(TyMdiWindowObject* self, PyObject* args, PyObject* kwds)
 	return 0;
 }
 
+static VOID CALLBACK
+TyMdiWindow_TimerCB(PVOID lParam, BOOLEAN TimerOrWaitFired)
+{
+	TyWindowObject* self = lParam;
+	SendMessage(self->hWin, WM_APP_TIMER, (WPARAM)0, (LPARAM)0);
+}
+
+PyObject*
+TyMdiWindow_set_timer(TyMdiWindowObject* self, PyObject* args, PyObject* kwds)
+{
+	float fInterval = 0, fWait = 0;
+	static char* kwlist[] = { "callback", "interval", "wait", NULL };
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|ff", kwlist,
+		&self->pyTimerCB,
+		&fInterval,
+		&fWait))
+		return NULL;
+
+	if (!PyCallable_Check(self->pyTimerCB)) {
+		PyErr_SetString(PyExc_TypeError, "Argument 1 ('callback') must be callable.");
+		return NULL;
+	}
+	if (self->hTimer && DeleteTimerQueueTimer(NULL, self->hTimer, NULL) == 0) {
+		PyErr_SetFromWindowsErr(0);
+		return NULL;
+	}
+
+	Py_INCREF(self->pyTimerCB);
+	if (!CreateTimerQueueTimer(&self->hTimer, NULL, (WAITORTIMERCALLBACK)TyMdiWindow_TimerCB, (PVOID)self, (DWORD)(fWait * 1000), (DWORD)(fInterval * 1000), WT_EXECUTEDEFAULT)) {
+		PyErr_SetFromWindowsErr(0);
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
+PyObject*
+TyMdiWindow_del_timer(TyMdiWindowObject* self)
+{
+	if (self->hTimer == 0)
+		Py_RETURN_NONE;
+
+	if (DeleteTimerQueueTimer(NULL, self->hTimer, NULL) == 0) {
+		PyErr_SetFromWindowsErr(0);
+		return NULL;
+	}
+	self->hTimer = 0;
+
+	Py_RETURN_NONE;
+}
+
 static int
 TyMdiWindow_setattro(TyMdiWindowObject* self, PyObject* pyAttributeName, PyObject* pyValue)
 {
@@ -235,6 +287,8 @@ static PyMemberDef TyMdiWindow_members[] = {
 };
 
 static PyMethodDef TyMdiWindow_methods[] = {
+	{ "set_timer", (PyCFunction)TyMdiWindow_set_timer, METH_VARARGS | METH_KEYWORDS, "Sets a fuction to be called at intervals." },
+	{ "del_timer", (PyCFunction)TyMdiWindow_del_timer, METH_NOARGS, "Deletes the timer." },
 	{ NULL }
 };
 
