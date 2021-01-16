@@ -57,6 +57,16 @@ Module Functions and Constants
 .. function:: get_setting(key1, key2, subkey)
 
     Retrieves the object stored using *set_setting*.
+    
+.. function:: play_sound([filename])
+
+    Plays the .wav file in *filename* or the default chime.
+    
+.. function:: joystick_status([stick_no])
+
+    Gets the status of joystick *stick_no* and returns a tuple
+    *(xpos, ypos, zpos, rpos, upos, button1, button2, button3, button4)*.
+    
 
 .. data:: app
 

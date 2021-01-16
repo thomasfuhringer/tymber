@@ -143,10 +143,65 @@ Tymber_settings_get(PyObject* self, PyObject* args)
 	return pyValue;
 }
 
+PyObject*
+Tymber_play_sound(PyObject* self, PyObject* args)
+{
+	char* strFileName = NULL;
+	if (!PyArg_ParseTuple(args, "|s",
+		&strFileName))
+		return NULL;
+
+	if (strFileName == NULL) {
+		if (!PlaySound((LPCTSTR)SND_ALIAS_SYSTEMDEFAULT, NULL, SND_ALIAS_ID | SND_ASYNC)) {
+			PyErr_SetFromWindowsErr(0);
+			return NULL;
+		}
+	}
+	else {
+		LPWSTR szFileName = toW(strFileName);
+		if (!PlaySound(szFileName, NULL, SND_FILENAME | SND_NODEFAULT)) {
+			PyErr_SetFromWindowsErr(0);
+			return NULL;
+		}
+		PyMem_RawFree(szFileName);
+	}
+
+	Py_RETURN_NONE;
+}
+
+PyObject*
+Tymber_joystick_status(PyObject* self, PyObject* args)
+{
+	int iJoystickNo = 0;
+	if (!PyArg_ParseTuple(args, "|i",
+		&iJoystickNo))
+		return NULL;
+
+	JOYINFO JoyInfo;
+	MMRESULT result = joyGetPos(iJoystickNo, &JoyInfo);
+	if (result != JOYERR_NOERROR)
+		Py_RETURN_NONE;
+
+	PyObject* pyStatus = PyTuple_Pack(9,
+		PyLong_FromLong(JoyInfo.wXpos),
+		PyLong_FromLong(JoyInfo.wYpos),
+		PyLong_FromLong(JoyInfo.wZpos),
+		PyLong_FromLong(0), // R
+		PyLong_FromLong(0), // U
+		PyBool_FromLong(JoyInfo.wButtons & JOY_BUTTON1),
+		PyBool_FromLong(JoyInfo.wButtons & JOY_BUTTON2),
+		PyBool_FromLong(JoyInfo.wButtons & JOY_BUTTON3),
+		PyBool_FromLong(JoyInfo.wButtons & JOY_BUTTON4));
+
+	return pyStatus;
+}
+
 static PyMethodDef TymberMethods[] = {
 	{ "message", Tymber_message, METH_VARARGS, "Show message box." },
 	{ "set_setting", Tymber_settings_set, METH_VARARGS, "Save a Byte object to settings." },
 	{ "get_setting", Tymber_settings_get, METH_VARARGS, "Load a Byte object from settings." },
+	{ "play_sound", Tymber_play_sound, METH_VARARGS, "Plays a sound." },
+	{ "joystick_status", Tymber_joystick_status, METH_VARARGS, "Get the status of a joystick." },
 	{ NULL, NULL, 0, NULL }
 };
 

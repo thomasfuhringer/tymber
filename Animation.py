@@ -54,6 +54,12 @@ def iterate():
         pad_x -= 2
     if app.window.key_pressed(ty.Key.right) and pad_x < width - 60:
         pad_x += 2
+        
+    status = ty.joystick_status()
+    if status and status[0] < 30000:
+        pad_x -= 2
+    if status and status[0] > 45000:
+        pad_x += 2
 
     canvas.clear_buffer()
     canvas.set_pen(0, 120, 240)
@@ -74,9 +80,15 @@ class Ball():
         self.velocity -= int((self.velocity**2) * app.window.entry_drag.data * direction / 600)
         self.velocity -= app.window.entry_gravity.data / 50
         self.position += self.velocity
-        if self.position < 0 and abs(center - pad_x - 30) < 36:
-            self.position = -self.position
-            self.velocity *= -1
+        if self.position < 0:
+            if abs(center - pad_x - 30) < 36:
+                self.position = -self.position
+                self.velocity *= -1
+            else:
+                global running
+                if running:
+                    ty.play_sound()
+                    running = False
 
 
 app = ty.Application(ty.Window("Bouncer", width=750, height=550))
