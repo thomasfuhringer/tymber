@@ -165,6 +165,52 @@ TyCanvas_rectangle(TyCanvasObject* self, PyObject* args)
 }
 
 static PyObject*
+TyCanvas_polygon(TyCanvasObject* self, PyObject* args)
+{
+	PyObject* pyPoints;
+	BOOL bFill = FALSE;
+	if (!PyArg_ParseTuple(args, "O|b",
+		&pyPoints,
+		&bFill))
+		return NULL;
+
+	if (!PyList_Check(pyPoints)) {
+		PyErr_Format(PyExc_TypeError, "Argument 1 must be a list of lists.");
+		return NULL;
+	}
+
+	Py_ssize_t n, iPoints = PyList_Size(pyPoints);
+	GpPoint point;
+	GpPoint* paPoints = (GpPoint*)PyMem_RawMalloc(sizeof(GpPoint) * iPoints);
+	PyObject* pyPoint, * pyX, * pyY;
+	for (n = 0; n < iPoints; n++) {
+		pyPoint = PyList_GetItem(pyPoints, n);
+		if (PyList_Check(pyPoint)) {
+			pyX = PyList_GetItem(pyPoint, 0);
+			pyY = PyList_GetItem(pyPoint, 1);
+			point.X = PyLong_AsLong(pyX);
+			point.Y = PyLong_AsLong(pyY);
+			paPoints[n] = point;
+		}
+		else {
+			PyErr_Format(PyExc_RuntimeError, "Argument 2 1 must be a list of lists. Item %d is not.", n);
+			return NULL;
+		}
+	}
+
+	if (bFill)
+		status = GdipFillPolygonI(self->pGraphics[self->iActiveBuffer], self->pBrush, paPoints, iPoints, FillModeAlternate);
+	else
+		status = GdipDrawPolygonI(self->pGraphics[self->iActiveBuffer], self->pPen, paPoints, iPoints);
+	if (status != Ok) {
+		PyErr_Format(PyExc_RuntimeError, "Cannot draw polygon.");
+		return NULL;
+	}
+	PyMem_Free(paPoints);
+	Py_RETURN_NONE;
+}
+
+static PyObject*
 TyCanvas_text(TyCanvasObject* self, PyObject* args)
 {
 	int iX, iY, iX2, iY2;
@@ -232,7 +278,6 @@ TyCanvas_image(TyCanvasObject* self, PyObject* args)
 	else {
 		UINT uWidth;
 		UINT uHeight;
-		GpBitmap* pImageTmp;
 		double dAspectRatio;
 		double dPictureAspectRatio;
 		int iOffsetX = 0;
@@ -538,6 +583,7 @@ static PyMethodDef TyCanvas_methods[] = {
 	{ "ellipse", (PyCFunction)TyCanvas_ellipse, METH_VARARGS, "Draws a point." },
 	{ "line", (PyCFunction)TyCanvas_line, METH_VARARGS, "Draws a line." },
 	{ "rectangle", (PyCFunction)TyCanvas_rectangle, METH_VARARGS, "Draws a rectangle." },
+	{ "polygon", (PyCFunction)TyCanvas_polygon, METH_VARARGS, "Draws a polygon." },
 	{ "text", (PyCFunction)TyCanvas_text, METH_VARARGS, "Draws a text string." },
 	{ "image", (PyCFunction)TyCanvas_image, METH_VARARGS, "Places a bitmap." },
 	{ "renew_buffer", (PyCFunction)TyCanvas_renew_buffer, METH_VARARGS, "Creates a new buffer." },

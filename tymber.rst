@@ -518,6 +518,11 @@ Canvas
         Draws a rectangle. 
 
 
+    .. method:: polygon(points[, fill])
+
+        Draws a polygon from list of [x,y] coordinates in *points*. 
+
+
     .. method:: ellipse(x, y, width, height[, fill])
 
         Draws an ellipse.

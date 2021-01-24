@@ -353,7 +353,6 @@ TyEntryProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	TyEntryObject* self = (TyEntryObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	PyObject* pyKey;
-	TyWidgetObject* pyWidget;
 
 	if (self) {
 		switch (msg)
