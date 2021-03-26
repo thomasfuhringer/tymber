@@ -33,6 +33,7 @@ app.run()
 
 ![Demo](Screenshot.png)
 
+![Animation](Bouncer.png)
 
 ## Usage
 

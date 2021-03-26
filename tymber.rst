@@ -13,13 +13,13 @@
 
 --------------
 
-Tymber
-
 Hello World
 -----------
 
 This simple program displays a window with a button that 
 has a callback to close it.
+
+.. code-block:: python
 
     import tymber as ty
 
@@ -34,7 +34,6 @@ has a callback to close it.
     app.run()
 
 
-...
 
 --------------
 
@@ -120,7 +119,7 @@ Classes
 .. _tymber-class-application:
 
 Application
--------
+-----------
 
 .. class:: Application(window)
 
@@ -152,24 +151,23 @@ Window
 
         A str to appear as the Windows's title.
 
-   .. attribute:: left
+    .. attribute:: left
 
-      Distance from left edge of desktop, if negative from right.
-      Default: *tymber.default_coordinate*
+        Distance from left edge of desktop, if negative from right.
+        Default: *tymber.default_coordinate*
 
    .. attribute:: top
 
-      Distance from top edge of desktop, if negative from bottom
+        Distance from top edge of desktop, if negative from bottom
 
    .. attribute:: width
 
-      Width or, if zero or negative, distance of right edge from right edge
-      of desktop
+        Width or, if zero or negative, distance of right edge from right edge
+        of desktop
 
    .. attribute:: height
 
-      Height or, if zero or negative, distance of bottom edge from bottom edge
-      of desktop
+        Height or, if zero or negative, distance of bottom edge from bottom edge of desktop
 
     .. attribute:: visible
 
@@ -338,7 +336,7 @@ Entry
 .. class:: Entry
 
     Single line data entry. After leaving the widget, the entered text is parsed and converted
-    into a value of :attrib:`data_type` and available as :attrib:`data`.
+    into a value of :attr:`data_type` and available as :attr:`data`.
 
     *Attributes and methods*
 
@@ -357,13 +355,13 @@ Entry
     .. attribute:: input_data
 
         The currently entered input converted to the Entry's data type,
-        but not yet committed to :attrib:`data`,
+        but not yet committed to :attr:`data`,
         for validation purposes.
 
     .. attribute:: input_string
 
         The currently entered input string,
-        but not yet committed to :attrib:`data`,
+        but not yet committed to :attr:`data`,
         for validation purposes.
 
     .. attribute:: align_horiz
@@ -692,7 +690,7 @@ Icon
 .. _tymber-class-status-bar:
 
 StatusBar
---------
+---------
 
 .. class:: StatusBar(window[, borders])
 
@@ -709,7 +707,7 @@ StatusBar
 .. _tymber-class-image-view:
 
 ImageView
---------
+---------
 
 .. class:: ImageView()
 
@@ -769,7 +767,7 @@ ListView
 .. _tymber-class-file-selector:
 
 FileSelector
---------
+------------
 
 .. class:: FileSelector( caption[, path])
 
@@ -813,7 +811,7 @@ MdiArea
 .. _tymber-class-mdi-window:
 
 MdiWindow
---------
+---------
 
 .. class:: MdiWindow()
 
