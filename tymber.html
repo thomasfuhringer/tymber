@@ -1,0 +1,1066 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tymber — GUI toolkit &#8212; Tymber 0.9.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-tymber">
+<span id="tymber-gui-toolkit"></span><h1><a class="reference internal" href="#module-tymber" title="tymber: A GUI toolkit on Windows"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tymber</span></code></a> — GUI toolkit<a class="headerlink" href="#module-tymber" title="Permalink to this headline">¶</a></h1>
+<p><strong>Binaries:</strong> <a class="reference external" href="https://github.com/thomasfuhringer/tymber/bin">https://github.com/thomasfuhringer/tymber/bin</a></p>
+<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/thomasfuhringer/tymber">https://github.com/thomasfuhringer/tymber</a></p>
+<hr class="docutils" />
+<div class="section" id="hello-world">
+<h2>Hello World<a class="headerlink" href="#hello-world" title="Permalink to this headline">¶</a></h2>
+<p>This simple program displays a window with a button that
+has a callback to close it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tymber</span> <span class="kn">as</span> <span class="nn">ty</span>
+
+<span class="k">def</span> <span class="nf">button__on_click</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+    <span class="n">button</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">ty</span><span class="o">.</span><span class="n">Application</span><span class="p">(</span><span class="n">ty</span><span class="o">.</span><span class="n">Window</span><span class="p">(</span><span class="s2">&quot;Tymber&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">280</span><span class="p">))</span>
+<span class="n">label</span> <span class="o">=</span> <span class="n">ty</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="s2">&quot;Hello World!&quot;</span><span class="p">)</span>
+<span class="n">label</span><span class="o">.</span><span class="n">align_h</span> <span class="o">=</span> <span class="n">ty</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">center</span>
+<span class="n">button</span> <span class="o">=</span> <span class="n">ty</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="s2">&quot;button&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">70</span><span class="p">,</span> <span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;Close&quot;</span><span class="p">)</span>
+<span class="n">button</span><span class="o">.</span><span class="n">on_click</span> <span class="o">=</span> <span class="n">button__on_click</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+</div>
+</div>
+<div class="section" id="module-functions-and-constants">
+<span id="tymber-module-contents"></span><h1>Module Functions and Constants<a class="headerlink" href="#module-functions-and-constants" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="tymber.message">
+<code class="descclassname">tymber.</code><code class="descname">message</code><span class="sig-paren">(</span><em>message</em><span class="optional">[</span>, <em>title</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a message box displaying the string <em>message</em>,
+using the string <em>title</em> as window title.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tymber.set_setting">
+<code class="descclassname">tymber.</code><code class="descname">set_setting</code><span class="sig-paren">(</span><em>key1</em>, <em>key2</em>, <em>subkey</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.set_setting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the byte object <em>value</em> as a configuration setting.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tymber.get_setting">
+<code class="descclassname">tymber.</code><code class="descname">get_setting</code><span class="sig-paren">(</span><em>key1</em>, <em>key2</em>, <em>subkey</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.get_setting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the object stored using <em>set_setting</em>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tymber.play_sound">
+<code class="descclassname">tymber.</code><code class="descname">play_sound</code><span class="sig-paren">(</span><span class="optional">[</span><em>filename</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.play_sound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plays the .wav file in <em>filename</em> or the default chime.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tymber.joystick_status">
+<code class="descclassname">tymber.</code><code class="descname">joystick_status</code><span class="sig-paren">(</span><span class="optional">[</span><em>stick_no</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.joystick_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the status of joystick <em>stick_no</em> and returns a tuple
+<em>(xpos, ypos, zpos, rpos, upos, button1, button2, button3, button4)</em>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tymber.app">
+<code class="descclassname">tymber.</code><code class="descname">app</code><a class="headerlink" href="#tymber.app" title="Permalink to this definition">¶</a></dt>
+<dd><p>Singleton instance of Application class.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tymber.default_coordinate">
+<code class="descclassname">tymber.</code><code class="descname">default_coordinate</code><a class="headerlink" href="#tymber.default_coordinate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value to assign to <code class="xref py py-attr docutils literal notranslate"><span class="pre">top</span></code> or <code class="xref py py-attr docutils literal notranslate"><span class="pre">left</span></code> coordinate of <a class="reference internal" href="#tymber.Window" title="tymber.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> to show it
+using MS Windows’ default positioning.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tymber.center">
+<code class="descclassname">tymber.</code><code class="descname">center</code><a class="headerlink" href="#tymber.center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value to assign to <code class="xref py py-attr docutils literal notranslate"><span class="pre">top</span></code> or <code class="xref py py-attr docutils literal notranslate"><span class="pre">left</span></code> coordinate of <a class="reference internal" href="#tymber.Window" title="tymber.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> to show it centered.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tymber.version_info">
+<code class="descclassname">tymber.</code><code class="descname">version_info</code><a class="headerlink" href="#tymber.version_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>The version number as a tuple of integers.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tymber.copyright">
+<code class="descclassname">tymber.</code><code class="descname">copyright</code><a class="headerlink" href="#tymber.copyright" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copyright notice.</p>
+</dd></dl>
+
+<div class="section" id="enumerations">
+<h2>Enumerations<a class="headerlink" href="#enumerations" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt id="tymber.Align">
+<code class="descclassname">tymber.</code><code class="descname">Align</code><a class="headerlink" href="#tymber.Align" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code> for alignment of text in widgets, possible values:
+<em>left, right, center, top, bottom, block</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tymber.StockIcon">
+<code class="descclassname">tymber.</code><code class="descname">StockIcon</code><a class="headerlink" href="#tymber.StockIcon" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code> icons included:
+<em>file_open, file_new, save, ok, no, window, find</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tymber.Key">
+<code class="descclassname">tymber.</code><code class="descname">Key</code><a class="headerlink" href="#tymber.Key" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code> keyboad keys:
+<em>enter, tab, escape, delete, space, left, right, up, down, f1</em></p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="classes">
+<span id="tymber-classes"></span><h1>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="application">
+<span id="tymber-class-application"></span><h2>Application<a class="headerlink" href="#application" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Application">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Application</code><span class="sig-paren">(</span><em>window</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Application" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <cite>app</cite> singleton. Only one instance can be created and it is globally available as <cite>tymber.app</cite>.</p>
+<p><em>Attributes and methods</em></p>
+<dl class="attribute">
+<dt id="tymber.Application.window">
+<code class="descname">window</code><a class="headerlink" href="#tymber.Application.window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main <a class="reference internal" href="#tymber.Window" title="tymber.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Application.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Application.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call <em>run</em> on <a class="reference internal" href="#tymber.Application.window" title="tymber.Application.window"><code class="xref py py-attr docutils literal notranslate"><span class="pre">window</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="window">
+<span id="tymber-class-window"></span><h2>Window<a class="headerlink" href="#window" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Window">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Window</code><span class="sig-paren">(</span><span class="optional">[</span><em>caption</em>, <em>left</em>, <em>top</em>, <em>width</em>, <em>height</em>, <em>visible</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Window" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>A GUI window which serves as a canvas to hold <a class="reference internal" href="#tymber.Widget" title="tymber.Widget"><code class="xref py py-class docutils literal notranslate"><span class="pre">Widget</span></code></a> objects.</p>
+<p><em>Attributes and methods</em></p>
+<dl class="attribute">
+<dt id="tymber.Window.caption">
+<code class="descname">caption</code><a class="headerlink" href="#tymber.Window.caption" title="Permalink to this definition">¶</a></dt>
+<dd><p>A str to appear as the Windows’s title.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.left">
+<code class="descname">left</code><a class="headerlink" href="#tymber.Window.left" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distance from left edge of desktop, if negative from right.
+Default: <em>tymber.default_coordinate</em></p>
+</dd></dl>
+
+</div></blockquote>
+<dl class="attribute">
+<dt id="tymber.Window.top">
+<code class="descname">top</code><a class="headerlink" href="#tymber.Window.top" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distance from top edge of desktop, if negative from bottom</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.width">
+<code class="descname">width</code><a class="headerlink" href="#tymber.Window.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Width or, if zero or negative, distance of right edge from right edge
+of desktop</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.height">
+<code class="descname">height</code><a class="headerlink" href="#tymber.Window.height" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Height or, if zero or negative, distance of bottom edge from bottom edge of desktop</div></blockquote>
+<dl class="attribute">
+<dt id="tymber.Window.visible">
+<code class="descname">visible</code><a class="headerlink" href="#tymber.Window.visible" title="Permalink to this definition">¶</a></dt>
+<dd><p>By default <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.children">
+<code class="descname">children</code><a class="headerlink" href="#tymber.Window.children" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code> of Widgets contained.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.position">
+<code class="descname">position</code><a class="headerlink" href="#tymber.Window.position" title="Permalink to this definition">¶</a></dt>
+<dd><p>A tuple with the <em>(x, y)</em> position of the widget on the screen.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.size">
+<code class="descname">size</code><a class="headerlink" href="#tymber.Window.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>A tuple with the <em>(width, height)</em> of the widget on the screen.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.icon">
+<code class="descname">icon</code><a class="headerlink" href="#tymber.Window.icon" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#tymber.Icon" title="tymber.Icon"><code class="xref py py-class docutils literal notranslate"><span class="pre">Icon</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.tool_bar">
+<code class="descname">tool_bar</code><a class="headerlink" href="#tymber.Window.tool_bar" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#tymber.ToolBar" title="tymber.ToolBar"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToolBar</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.status_bar">
+<code class="descname">status_bar</code><a class="headerlink" href="#tymber.Window.status_bar" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#tymber.StatusBar" title="tymber.StatusBar"><code class="xref py py-class docutils literal notranslate"><span class="pre">StatusBar</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.before_close">
+<code class="descname">before_close</code><a class="headerlink" href="#tymber.Window.before_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback. If it returns <em>False</em> the window will stay open.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.on_close">
+<code class="descname">on_close</code><a class="headerlink" href="#tymber.Window.on_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when closing.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.focus">
+<code class="descname">focus</code><a class="headerlink" href="#tymber.Window.focus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Widget holding the focus.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.on_focus_change">
+<code class="descname">on_focus_change</code><a class="headerlink" href="#tymber.Window.on_focus_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when focus was moved to new widget.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.min_width">
+<code class="descname">min_width</code><a class="headerlink" href="#tymber.Window.min_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum width</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Window.min_height">
+<code class="descname">min_height</code><a class="headerlink" href="#tymber.Window.min_height" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Minimum height</div></blockquote>
+<dl class="method">
+<dt id="tymber.Window.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Window.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show as dialog (modal).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Window.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Window.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hide the window and, if run modal, return from <em>run</em>.
+(Does not destroy it).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Window.set_timer">
+<code class="descname">set_timer</code><span class="sig-paren">(</span><em>callback</em><span class="optional">[</span>, <em>interval</em>, <em>wait</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Window.set_timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a timer to fire after <em>wait</em> seconds every <em>interval</em> seconds.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Window.del_timer">
+<code class="descname">del_timer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Window.del_timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the timer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Window.key_pressed">
+<code class="descname">key_pressed</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Window.key_pressed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if <em>key</em> is pressed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="widget">
+<span id="tymber-class-widget"></span><h2>Widget<a class="headerlink" href="#widget" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Widget">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Widget</code><span class="sig-paren">(</span><em>parent</em>, <em>key</em><span class="optional">[</span>, <em>left</em>, <em>top</em>, <em>width</em>, <em>height</em>, <em>caption</em>, <em>data_type</em>, <em>format</em>, <em>visible</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Widget is the base class from which all data aware widgets that
+can be displayed on a <a class="reference internal" href="#tymber.Window" title="tymber.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> are derived.</p>
+<p>The construtor parameters are also available as attributes:</p>
+<dl class="attribute">
+<dt id="tymber.Widget.parent">
+<code class="descname">parent</code><a class="headerlink" href="#tymber.Widget.parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Can be a <a class="reference internal" href="#tymber.Window" title="tymber.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a>, <a class="reference internal" href="#tymber.MdiWindow" title="tymber.MdiWindow"><code class="xref py py-class docutils literal notranslate"><span class="pre">MdiWindow</span></code></a> or <a class="reference internal" href="#tymber.Widget" title="tymber.Widget"><code class="xref py py-class docutils literal notranslate"><span class="pre">Widget</span></code></a> that holds the widget.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.key">
+<code class="descname">key</code><a class="headerlink" href="#tymber.Widget.key" title="Permalink to this definition">¶</a></dt>
+<dd><p>The string that is used to reference the widget in the parent’s <cite>children</cite> dict.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.left">
+<code class="descname">left</code><a class="headerlink" href="#tymber.Widget.left" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distance from left edge of parent, if negative from right.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.top">
+<code class="descname">top</code><a class="headerlink" href="#tymber.Widget.top" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distance from top edge of parent, if negative from bottom</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.width">
+<code class="descname">width</code><a class="headerlink" href="#tymber.Widget.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Width or, if zero or negative, distance of right edge from right edge
+of parent</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.height">
+<code class="descname">height</code><a class="headerlink" href="#tymber.Widget.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Height or, if zero or negative, distance of bottom edge from bottom edge
+of parent</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.caption">
+<code class="descname">caption</code><a class="headerlink" href="#tymber.Widget.caption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Text used e.g. for <a class="reference internal" href="#tymber.Label" title="tymber.Label"><code class="xref py py-class docutils literal notranslate"><span class="pre">Label</span></code></a> or <a class="reference internal" href="#tymber.Entry" title="tymber.Entry"><code class="xref py py-class docutils literal notranslate"><span class="pre">Entry</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.data_type">
+<code class="descname">data_type</code><a class="headerlink" href="#tymber.Widget.data_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Python data type the widget can hold.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.format">
+<code class="descname">format</code><a class="headerlink" href="#tymber.Widget.format" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Python format string in the <code class="xref py py-meth docutils literal notranslate"><span class="pre">str.format()</span></code> syntax that is used
+to render the data.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.visible">
+<code class="descname">visible</code><a class="headerlink" href="#tymber.Widget.visible" title="Permalink to this definition">¶</a></dt>
+<dd><p>By default <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Widget.enabled">
+<code class="descname">enabled</code><a class="headerlink" href="#tymber.Widget.enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <code class="xref py py-const docutils literal notranslate"><span class="pre">False</span></code> widget is grayed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="label">
+<span id="tymber-class-label"></span><h2>Label<a class="headerlink" href="#label" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Label">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Label</code><a class="headerlink" href="#tymber.Label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows boilerplate text on the <a class="reference internal" href="#tymber.Window" title="tymber.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a>.</p>
+<dl class="attribute">
+<dt id="tymber.Label.align_h">
+<code class="descname">align_h</code><a class="headerlink" href="#tymber.Label.align_h" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code> Align of horizontal text alignment.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Label.align_v">
+<code class="descname">align_v</code><a class="headerlink" href="#tymber.Label.align_v" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code> Align of vertical text alignment.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Label.text_color">
+<code class="descname">text_color</code><a class="headerlink" href="#tymber.Label.text_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>A tuple of RGB integers.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="entry">
+<span id="tymber-class-entry"></span><h2>Entry<a class="headerlink" href="#entry" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Entry">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Entry</code><a class="headerlink" href="#tymber.Entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single line data entry. After leaving the widget, the entered text is parsed and converted
+into a value of <code class="xref py py-attr docutils literal notranslate"><span class="pre">data_type</span></code> and available as <a class="reference internal" href="#tymber.Entry.data" title="tymber.Entry.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code></a>.</p>
+<p><em>Attributes and methods</em></p>
+<dl class="attribute">
+<dt id="tymber.Entry.data">
+<code class="descname">data</code><a class="headerlink" href="#tymber.Entry.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value the Entry holds.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Entry.read_only">
+<code class="descname">read_only</code><a class="headerlink" href="#tymber.Entry.read_only" title="Permalink to this definition">¶</a></dt>
+<dd><p>Editing not possible.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Entry.password">
+<code class="descname">password</code><a class="headerlink" href="#tymber.Entry.password" title="Permalink to this definition">¶</a></dt>
+<dd><p>Characters are not legible.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Entry.input_data">
+<code class="descname">input_data</code><a class="headerlink" href="#tymber.Entry.input_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The currently entered input converted to the Entry’s data type,
+but not yet committed to <a class="reference internal" href="#tymber.Entry.data" title="tymber.Entry.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code></a>,
+for validation purposes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Entry.input_string">
+<code class="descname">input_string</code><a class="headerlink" href="#tymber.Entry.input_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>The currently entered input string,
+but not yet committed to <a class="reference internal" href="#tymber.Entry.data" title="tymber.Entry.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code></a>,
+for validation purposes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Entry.align_horiz">
+<code class="descname">align_horiz</code><a class="headerlink" href="#tymber.Entry.align_horiz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Horizontal alignment. By default tymber.Align.left for data type str and
+tymber.Align.right for numeric data types</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Entry.on_key">
+<code class="descname">on_key</code><a class="headerlink" href="#tymber.Entry.on_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when key is pressed</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Entry.on_leave">
+<code class="descname">on_leave</code><a class="headerlink" href="#tymber.Entry.on_leave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback, return True if ready for focus to move on.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Entry.multiline">
+<code class="descname">multiline</code><a class="headerlink" href="#tymber.Entry.multiline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Characters are not legible.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="combobox">
+<span id="tymber-class-combobox"></span><h2>ComboBox<a class="headerlink" href="#combobox" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.ComboBox">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">ComboBox</code><a class="headerlink" href="#tymber.ComboBox" title="Permalink to this definition">¶</a></dt>
+<dd><p>ComboBox which allows selection from a drop down list of data values.</p>
+<dl class="method">
+<dt id="tymber.ComboBox.append">
+<code class="descname">append</code><span class="sig-paren">(</span><em>value</em><span class="optional">[</span>, <em>key</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.ComboBox.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends o tuple of (<em>value</em>, <em>key</em>) to the list of available items.
+<em>key</em> is displayed in the widget, <em>value</em> returned as
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code>
+If <em>key</em> is not given, <em>value</em> will be assumed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="button">
+<span id="tymber-class-button"></span><h2>Button<a class="headerlink" href="#button" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Button">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Button</code><a class="headerlink" href="#tymber.Button" title="Permalink to this definition">¶</a></dt>
+<dd><p>Push button to trigger a callback.</p>
+<dl class="attribute">
+<dt id="tymber.Button.on_click">
+<code class="descname">on_click</code><a class="headerlink" href="#tymber.Button.on_click" title="Permalink to this definition">¶</a></dt>
+<dd><p>If a callable is assigned here it is called when the button is
+clicked.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="tab">
+<span id="tymber-class-tab"></span><h2>Tab<a class="headerlink" href="#tab" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Tab">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Tab</code><a class="headerlink" href="#tymber.Tab" title="Permalink to this definition">¶</a></dt>
+<dd><p>A tabbed notebook container.
+Holds <a class="reference internal" href="#tymber.TabPage" title="tymber.TabPage"><code class="xref py py-class docutils literal notranslate"><span class="pre">TabPage</span></code></a> objects.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="tabpage">
+<span id="tymber-class-tab-page"></span><h2>TabPage<a class="headerlink" href="#tabpage" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.TabPage">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">TabPage</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.TabPage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Page in a <a class="reference internal" href="#tymber.Tab" title="tymber.Tab"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tab</span></code></a> Widget.
+<em>parent</em> in contructor must be the <a class="reference internal" href="#tymber.Tab" title="tymber.Tab"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tab</span></code></a> object.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="box">
+<span id="tymber-class-box"></span><h2>Box<a class="headerlink" href="#box" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Box">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Box</code><a class="headerlink" href="#tymber.Box" title="Permalink to this definition">¶</a></dt>
+<dd><p>Container that can hold other Widgets.</p>
+<p>A <a class="reference internal" href="#tymber.Splitter" title="tymber.Splitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Splitter</span></code></a> object holds two Box Widgets.</p>
+<dl class="attribute">
+<dt id="tymber.Box.children">
+<code class="descname">children</code><a class="headerlink" href="#tymber.Box.children" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code> of Widgets contained.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="splitter">
+<span id="tymber-class-splitter"></span><h2>Splitter<a class="headerlink" href="#splitter" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Splitter">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Splitter</code><a class="headerlink" href="#tymber.Splitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A widget with two adjustable panes. Each one is a
+<a class="reference internal" href="#tymber.Box" title="tymber.Box"><code class="xref py py-class docutils literal notranslate"><span class="pre">Box</span></code></a> object.</p>
+<dl class="attribute">
+<dt id="tymber.Splitter.box1">
+<code class="descname">box1</code><a class="headerlink" href="#tymber.Splitter.box1" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#tymber.Box" title="tymber.Box"><code class="xref py py-class docutils literal notranslate"><span class="pre">Box</span></code></a> object on the left or top.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Splitter.box2">
+<code class="descname">box2</code><a class="headerlink" href="#tymber.Splitter.box2" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#tymber.Box" title="tymber.Box"><code class="xref py py-class docutils literal notranslate"><span class="pre">Box</span></code></a> object on the right or bottom.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Splitter.vertical">
+<code class="descname">vertical</code><a class="headerlink" href="#tymber.Splitter.vertical" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code> panes are arranged top/bottom.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Splitter.position">
+<code class="descname">position</code><a class="headerlink" href="#tymber.Splitter.position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Position of the separator, if negative from left or bottom</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Splitter.spacing">
+<code class="descname">spacing</code><a class="headerlink" href="#tymber.Splitter.spacing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Width of the separator</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="canvas">
+<span id="tymber-class-canvas"></span><h2>Canvas<a class="headerlink" href="#canvas" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Canvas">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Canvas</code><a class="headerlink" href="#tymber.Canvas" title="Permalink to this definition">¶</a></dt>
+<dd><p>A widget for basic drawing. It sports two buffers (index 0 and 1).
+By default buffer 0 is active and live.</p>
+<dl class="method">
+<dt id="tymber.Canvas.set_pen">
+<code class="descname">set_pen</code><span class="sig-paren">(</span><span class="optional">[</span><em>red</em>, <em>green</em>, <em>blue</em>, <em>alpha</em>, <em>width</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.set_pen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Color and thickness to be used for drawing and filling.
+Default: (0, 0, 0, 255, 1)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.point">
+<code class="descname">point</code><span class="sig-paren">(</span><em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws a point at the given coordinates.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.line">
+<code class="descname">line</code><span class="sig-paren">(</span><em>x1</em>, <em>y1</em>, <em>x2</em>, <em>y2</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws a line from <em>x1</em>, <em>y1</em> to <em>x2</em>, <em>y2</em></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.rectangle">
+<code class="descname">rectangle</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>width</em>, <em>height</em><span class="optional">[</span>, <em>fill</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.rectangle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws a rectangle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.polygon">
+<code class="descname">polygon</code><span class="sig-paren">(</span><em>points</em><span class="optional">[</span>, <em>fill</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.polygon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws a polygon from list of [x,y] coordinates in <em>points</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.ellipse">
+<code class="descname">ellipse</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>width</em>, <em>height</em><span class="optional">[</span>, <em>fill</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.ellipse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws an ellipse.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.text">
+<code class="descname">text</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>x2</em>, <em>y2</em>, <em>string</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes <em>string</em> into the given rectangle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.image">
+<code class="descname">image</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>data</em><span class="optional">[</span>, <em>width</em>, <em>height</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Puts an image at the given position. If width or height is given, the image will be scaled retaining aspect ratio.
+data is to be either a ‘str’ holding file name or ‘bytes’ holding the data in memory.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.resize_buffer">
+<code class="descname">resize_buffer</code><span class="sig-paren">(</span><span class="optional">[</span><em>index</em>, <em>width</em>, <em>height</em>, <em>x</em>, <em>y</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.resize_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the size of the buffer. If <em>index</em> is not given active_buffer will be used.
+If <em>width</em> and <em>height</em> are not given the canvas’ are applied.
+If given the current content will be moved to <em>x</em> and <em>y</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.copy_buffer">
+<code class="descname">copy_buffer</code><span class="sig-paren">(</span><em>index1</em>, <em>index1</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.copy_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy the content of buffer 1 to 2.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.clear_buffer">
+<code class="descname">clear_buffer</code><span class="sig-paren">(</span><span class="optional">[</span><em>index</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.clear_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the buffer. If index is not given, the active_buffer will be used.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.renew_buffer">
+<code class="descname">renew_buffer</code><span class="sig-paren">(</span><span class="optional">[</span><em>index</em>, <em>width</em>, <em>height</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.renew_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new buffer. If index is not given active_buffer will be used.
+If width and height are not given the canvas’ are applied.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Canvas.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Canvas.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Triggers the paint process.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Canvas.on_resize">
+<code class="descname">on_resize</code><a class="headerlink" href="#tymber.Canvas.on_resize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when the widget gets resized.
+Parameters: widget</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Canvas.active_buffer">
+<code class="descname">active_buffer</code><a class="headerlink" href="#tymber.Canvas.active_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of the buffer to be used for drawing operations. Default: 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Canvas.live_buffer">
+<code class="descname">live_buffer</code><a class="headerlink" href="#tymber.Canvas.live_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of the buffer to be displayed when the OS refreshes the screen. Default: 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Canvas.on_mouse_move">
+<code class="descname">on_mouse_move</code><a class="headerlink" href="#tymber.Canvas.on_mouse_move" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when the mouse is moved.
+Parameters: widget, x, y</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Canvas.on_mouse_wheel">
+<code class="descname">on_mouse_wheel</code><a class="headerlink" href="#tymber.Canvas.on_mouse_wheel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when the left mouse wheel was turned.
+Parameters: widget, delta, x, y</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Canvas.on_l_button_down">
+<code class="descname">on_l_button_down</code><a class="headerlink" href="#tymber.Canvas.on_l_button_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when the left mouse button is pressed.
+Parameters: widget, x, y</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Canvas.on_l_button_up">
+<code class="descname">on_l_button_up</code><a class="headerlink" href="#tymber.Canvas.on_l_button_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when the left mouse button is released.
+Parameters: widget, x, y</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.Canvas.anti_alias">
+<code class="descname">anti_alias</code><a class="headerlink" href="#tymber.Canvas.anti_alias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drawing operations should be done in a callback which is assigned here.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="menu">
+<span id="tymber-class-menu"></span><h2>Menu<a class="headerlink" href="#menu" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Menu">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Menu</code><span class="sig-paren">(</span><em>parent</em>, <em>key</em>, <em>caption</em><span class="optional">[</span>, <em>icon</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Menu" title="Permalink to this definition">¶</a></dt>
+<dd><p>A (sub-)menu.</p>
+<p><em>caption</em> must be a str to be displayed in the menu.</p>
+<dl class="attribute">
+<dt id="tymber.Menu.children">
+<code class="descname">children</code><a class="headerlink" href="#tymber.Menu.children" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code> of Widgets contained.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.Menu.append_separator">
+<code class="descname">append_separator</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Menu.append_separator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="menuitem">
+<span id="tymber-class-menu-item"></span><h2>MenuItem<a class="headerlink" href="#menuitem" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.MenuItem">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">MenuItem</code><span class="sig-paren">(</span><em>parent</em>, <em>key</em>, <em>caption</em>, <em>on_click</em><span class="optional">[</span>, <em>icon</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.MenuItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>An item in a <a class="reference internal" href="#tymber.Menu" title="tymber.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a> object.
+Can also be inserted into <code class="xref py py-class docutils literal notranslate"><span class="pre">Toolbar</span></code></p>
+<p><em>caption</em> must be a str to be displayed in the menu,</p>
+<p><em>on_click</em> is the callback to be triggered on selection</p>
+<dl class="attribute">
+<dt id="tymber.MenuItem.enabled">
+<code class="descname">enabled</code><a class="headerlink" href="#tymber.MenuItem.enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>If False the MenuItem is grayed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="toolbar">
+<span id="tymber-class-tool-bar"></span><h2>ToolBar<a class="headerlink" href="#toolbar" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.ToolBar">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">ToolBar</code><span class="sig-paren">(</span><em>window</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.ToolBar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tool bar attached to <em>window</em>.</p>
+<dl class="attribute">
+<dt id="tymber.ToolBar.children">
+<code class="descname">children</code><a class="headerlink" href="#tymber.ToolBar.children" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code> of items contained.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.ToolBar.append_item">
+<code class="descname">append_item</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.ToolBar.append_item" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>item</em> must be a <a class="reference internal" href="#tymber.MenuItem" title="tymber.MenuItem"><code class="xref py py-class docutils literal notranslate"><span class="pre">MenuItem</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.ToolBar.append_separator">
+<code class="descname">append_separator</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.ToolBar.append_separator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a separator line</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.ToolBar.set_enabled">
+<code class="descname">set_enabled</code><span class="sig-paren">(</span><em>item</em>, <em>enabled</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.ToolBar.set_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>item</em> must be a <a class="reference internal" href="#tymber.MenuItem" title="tymber.MenuItem"><code class="xref py py-class docutils literal notranslate"><span class="pre">MenuItem</span></code></a>. If <em>enabled</em> is False the button is grayed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="icon">
+<span id="tymber-class-icon"></span><h2>Icon<a class="headerlink" href="#icon" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.Icon">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">Icon</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.Icon" title="Permalink to this definition">¶</a></dt>
+<dd><p>An icon to be used in <a class="reference internal" href="#tymber.MenuItem" title="tymber.MenuItem"><code class="xref py py-class docutils literal notranslate"><span class="pre">MenuItem</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Toolbar</span></code> and <a class="reference internal" href="#tymber.Window" title="tymber.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> objects.</p>
+<p><em>source</em> must be a ‘str’ of the file name or ‘bytes’ holding the data.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="statusbar">
+<span id="tymber-class-status-bar"></span><h2>StatusBar<a class="headerlink" href="#statusbar" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.StatusBar">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">StatusBar</code><span class="sig-paren">(</span><em>window</em><span class="optional">[</span>, <em>borders</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.StatusBar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Status bar attached to <em>window</em>. <em>borders</em> is a <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code> of ‘int’ defining the lengths of parts if more than one are to be used.</p>
+<dl class="method">
+<dt id="tymber.StatusBar.set_text">
+<code class="descname">set_text</code><span class="sig-paren">(</span><em>text</em><span class="optional">[</span>, <em>part</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.StatusBar.set_text" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>part</em> is an int.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">set_text</code><span class="sig-paren">(</span><em>part</em><span class="sig-paren">)</span></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="imageview">
+<span id="tymber-class-image-view"></span><h2>ImageView<a class="headerlink" href="#imageview" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.ImageView">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">ImageView</code><a class="headerlink" href="#tymber.ImageView" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays a bitmap.
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code> must be a ‘str’ of the file name or ‘bytes’ holding the data.
+If <code class="xref py py-attr docutils literal notranslate"><span class="pre">stretch</span></code> is True it will be stretched keeping aspect ratio.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="listview">
+<span id="tymber-class-list-view"></span><h2>ListView<a class="headerlink" href="#listview" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.ListView">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">ListView</code><a class="headerlink" href="#tymber.ListView" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays a list of data in a table.</p>
+<dl class="attribute">
+<dt id="tymber.ListView.data">
+<code class="descname">data</code><a class="headerlink" href="#tymber.ListView.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>List that holds the data</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.ListView.columns">
+<code class="descname">columns</code><a class="headerlink" href="#tymber.ListView.columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of Lists that define the columns.
+Format: [caption, data_type, width, data_format] if <em>width</em> is <em>None</em> the the column is hidden.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.ListView.row">
+<code class="descname">row</code><a class="headerlink" href="#tymber.ListView.row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of row currently selected, or <em>None</em>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.ListView.on_selection_changed">
+<code class="descname">on_selection_changed</code><a class="headerlink" href="#tymber.ListView.on_selection_changed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when a row was selected.
+Parameters: widget</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.ListView.on_double_click">
+<code class="descname">on_double_click</code><a class="headerlink" href="#tymber.ListView.on_double_click" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when a row was double clicked.
+Parameters: widget, index</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.ListView.add_row">
+<code class="descname">add_row</code><span class="sig-paren">(</span><em>data</em><span class="optional">[</span>, <em>index</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.ListView.add_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a row with <em>data</em> after <em>index</em> . If <em>index</em> is not given <a class="reference internal" href="#tymber.ListView.row" title="tymber.ListView.row"><code class="xref py py-attr docutils literal notranslate"><span class="pre">row</span></code></a> will be used.
+In case <a class="reference internal" href="#tymber.ListView.row" title="tymber.ListView.row"><code class="xref py py-attr docutils literal notranslate"><span class="pre">row</span></code></a> is <em>None</em> the new row will be appended.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.ListView.update_row">
+<code class="descname">update_row</code><span class="sig-paren">(</span><em>data</em><span class="optional">[</span>, <em>index</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.ListView.update_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replaces the row with <em>data</em>. If <em>index</em> is not given <a class="reference internal" href="#tymber.ListView.row" title="tymber.ListView.row"><code class="xref py py-attr docutils literal notranslate"><span class="pre">row</span></code></a> will be used.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.ListView.delete_row">
+<code class="descname">delete_row</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#tymber.ListView.delete_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the row at <em>index</em>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="fileselector">
+<span id="tymber-class-file-selector"></span><h2>FileSelector<a class="headerlink" href="#fileselector" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.FileSelector">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">FileSelector</code><span class="sig-paren">(</span><em>caption</em><span class="optional">[</span>, <em>path</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.FileSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>File selection dialog. <em>path</em> is the initial path.</p>
+<dl class="method">
+<dt id="tymber.FileSelector.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.FileSelector.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show it modal. Returns the file name if selected or None.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mdiarea">
+<span id="tymber-class-mdi-area"></span><h2>MdiArea<a class="headerlink" href="#mdiarea" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.MdiArea">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">MdiArea</code><a class="headerlink" href="#tymber.MdiArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Can hold <a class="reference internal" href="#tymber.MdiWindow" title="tymber.MdiWindow"><code class="xref py py-class docutils literal notranslate"><span class="pre">MdiWindow</span></code></a> objects.</p>
+<dl class="method">
+<dt id="tymber.MdiArea.tile">
+<code class="descname">tile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.MdiArea.tile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Arrange child windows in tile format.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.MdiArea.active_child">
+<code class="descname">active_child</code><a class="headerlink" href="#tymber.MdiArea.active_child" title="Permalink to this definition">¶</a></dt>
+<dd><p>Child window that has the focus</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.MdiArea.on_activated">
+<code class="descname">on_activated</code><a class="headerlink" href="#tymber.MdiArea.on_activated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback when new child was activated</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.MdiArea.maximized">
+<code class="descname">maximized</code><a class="headerlink" href="#tymber.MdiArea.maximized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Child windows are shown maximized</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tymber.MdiArea.menu">
+<code class="descname">menu</code><a class="headerlink" href="#tymber.MdiArea.menu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Menu to hold windows</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mdiwindow">
+<span id="tymber-class-mdi-window"></span><h2>MdiWindow<a class="headerlink" href="#mdiwindow" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tymber.MdiWindow">
+<em class="property">class </em><code class="descclassname">tymber.</code><code class="descname">MdiWindow</code><a class="headerlink" href="#tymber.MdiWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>A window to be displayed inside an <a class="reference internal" href="#tymber.MdiArea" title="tymber.MdiArea"><code class="xref py py-class docutils literal notranslate"><span class="pre">MdiArea</span></code></a></p>
+<dl class="attribute">
+<dt id="tymber.MdiWindow.parent">
+<code class="descname">parent</code><a class="headerlink" href="#tymber.MdiWindow.parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>MdiArea that holds the MdiWindow</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tymber.MdiWindow.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tymber.MdiWindow.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the window from the parent’s <em>children</em> collection (and consequently destroy it).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Tymber</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Thomas Führinger.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/tymber.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
