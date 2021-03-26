@@ -29,7 +29,7 @@ button.on_click = button__on_click
 app.run()
 ```
 
-### Screen Shot
+### Screen Shots
 
 ![Demo](Screenshot.png)
 
@@ -43,4 +43,4 @@ app.run()
 
 In the files `demo.py` and `Lybniz.py` you find examples of application code.
 
-`tymber.rst` contains some documentation.
+Here is some [documentation](tymber.html).
