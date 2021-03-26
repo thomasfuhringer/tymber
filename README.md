@@ -43,4 +43,4 @@ app.run()
 
 In the files `demo.py` and `Lybniz.py` you find examples of application code.
 
-Here is some [documentation](tymber.html).
+Here is some [documentation](https://thomasfuhringer.github.io/tymber/tymber.html).
