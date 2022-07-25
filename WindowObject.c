@@ -179,10 +179,31 @@ TyWindow_key_pressed(TyWindowObject* self, PyObject* pyKey)
 		Py_RETURN_FALSE;
 }
 
+BOOL
+TyWindow_SetCaption(TyWidgetObject* self, PyObject* pyText)
+{
+	LPCSTR strText = PyUnicode_AsUTF8(pyText);
+	LPWSTR szText = toW(strText);
+	if (SendMessage(self->hWin, WM_SETTEXT, (WPARAM)0, (LPARAM)szText)) {
+		PyMem_RawFree(szText);
+		TyAttachObject(&self->pyCaption, pyText);
+		return TRUE;
+	}
+	else {
+		return TRUE; // something's not working with SendMessage
+		PyErr_SetFromWindowsErr(0);
+		PyMem_RawFree(szText);
+		return FALSE;
+	}
+}
+
 static int
 TyWindow_setattro(TyWindowObject* self, PyObject* pyAttributeName, PyObject* pyValue)
 {
 	if (PyUnicode_Check(pyAttributeName)) {
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "caption") == 0) {
+			return TyWindow_SetCaption(self, pyValue) ? 0 : -1;
+		}
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "visible") == 0) {
 			ShowWindow(self->hWin, PyObject_IsTrue(pyValue) ? SW_SHOW : SW_HIDE);
 			return  0;
@@ -334,6 +355,7 @@ static PyMemberDef TyWindow_members[] = {
 	{ "tool_bar", T_OBJECT, offsetof(TyWindowObject, pyToolBar), READONLY, "ToolBar" },
 	{ "status_bar", T_OBJECT, offsetof(TyWindowObject, pyStatusBar), READONLY, "StatusBar" },
 	{ "icon", T_OBJECT, offsetof(TyWindowObject, pyIcon), READONLY, "Icon" },
+	{ "caption", T_OBJECT, offsetof(TyWindowObject, pyCaption), READONLY, "Caption text" },
 	{ "min_width", T_INT, offsetof(TyWindowObject, cxMin), 0, "Window can not be resized smaller" },
 	{ "min_height", T_INT, offsetof(TyWindowObject, cyMin), 0, "Window can not be resized smaller" },
 	{ "focus", T_OBJECT, offsetof(TyWindowObject, pyFocusWidget), READONLY, "Widget that has the keyboard focus." },

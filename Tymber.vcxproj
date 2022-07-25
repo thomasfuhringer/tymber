@@ -25,6 +25,10 @@
       <Configuration>Release Py39</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release Py310|x64">
+      <Configuration>Release Py310</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release Py37|Win32">
       <Configuration>Release Py37</Configuration>
       <Platform>Win32</Platform>
@@ -81,6 +85,13 @@
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py39|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py310|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -160,6 +171,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py39|x64'">
     <IncludePath>.;C:\Program Files\Python39\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Python39\libs;$(LibraryPath)</LibraryPath>
+    <OutDir>$(Platform)\..\</OutDir>
+    <TargetName>tymber</TargetName>
+    <TargetExt>.pyd</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Py310|x64'">
+    <IncludePath>.;C:\Program Files\Python310\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\Python310\libs;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\..\</OutDir>
     <TargetName>tymber</TargetName>
     <TargetExt>.pyd</TargetExt>
@@ -306,17 +324,35 @@
       <AdditionalDependencies>comctl32.lib;Shlwapi.lib;gdiplus.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Py310|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>comctl32.lib;Shlwapi.lib;gdiplus.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationObject.c" />
     <ClCompile Include="BoxObject.c" />
     <ClCompile Include="ButtonObject.c" />
     <ClCompile Include="CanvasObject.c" />
+    <ClCompile Include="CheckboxObject.c" />
     <ClCompile Include="ComboBoxObject.c" />
     <ClCompile Include="EntryObject.c" />
     <ClCompile Include="FileSelectorObject.c" />
     <ClCompile Include="IconObject.c" />
     <ClCompile Include="ImageViewObject.c" />
     <ClCompile Include="LabelObject.c" />
+    <ClCompile Include="MarkDown2RichText.c" />
     <ClCompile Include="MdiAreaObject.c" />
     <ClCompile Include="MdiWindowObject.c" />
     <ClCompile Include="MenuObject.c" />
@@ -324,6 +360,7 @@
     <ClCompile Include="StatusBarObject.c" />
     <ClCompile Include="ListViewObject.c" />
     <ClCompile Include="TabObject.c" />
+    <ClCompile Include="TextViewObject.c" />
     <ClCompile Include="ToolBarObject.c" />
     <ClCompile Include="Utilities.c" />
     <ClCompile Include="Module.c" />
@@ -335,6 +372,7 @@
     <ClInclude Include="BoxObject.h" />
     <ClInclude Include="ButtonObject.h" />
     <ClInclude Include="CanvasObject.h" />
+    <ClInclude Include="CheckboxObject.h" />
     <ClInclude Include="ComboBoxObject.h" />
     <ClInclude Include="EntryObject.h" />
     <ClInclude Include="fGdiPlusFlat.h" />
@@ -350,6 +388,7 @@
     <ClInclude Include="StatusBarObject.h" />
     <ClInclude Include="ListViewObject.h" />
     <ClInclude Include="TabObject.h" />
+    <ClInclude Include="TextViewObject.h" />
     <ClInclude Include="ToolBarObject.h" />
     <ClInclude Include="Tymber.h" />
     <ClInclude Include="Utilities.h" />

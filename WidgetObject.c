@@ -16,6 +16,7 @@ TyWidget_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 		self->bVisible = TRUE;
 		self->bReadOnly = FALSE;
 		self->bEnabled = TRUE;
+		self->iMargin = 0;
 		self->pyWindow = NULL;
 		self->pyData = Py_None;
 		Py_INCREF(Py_None);
@@ -242,6 +243,11 @@ TyWidget_MoveWindow(TyWidgetObject* self)
 	if (MoveWindow(self->hWin, rect.left, rect.top, rect.right, rect.bottom, TRUE) == 0) {
 		PyErr_SetFromWindowsErr(0);
 		return FALSE;
+	}
+	if (self->iMargin) {
+		GetClientRect(self->hWin, &rect);
+		InflateRect(&rect, self->iMargin * -1, self->iMargin * -1);
+		SendMessage(self->hWin, EM_SETRECT, 0, &rect);
 	}
 	return TRUE;
 }

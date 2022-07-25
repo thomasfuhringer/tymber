@@ -16,6 +16,7 @@
 		WNDPROC fnOldWinProcedure; \
 		BOOL bReadOnly; \
 		BOOL bEnabled; \
+		int iMargin; \
 	    PyObject* pyCaption; \
 		PyObject* pyData; \
 		PyTypeObject* pyDataType; \

@@ -453,6 +453,21 @@ Box
         A :class:`Dict` of Widgets contained.
 
 
+.. _tymber-class-check-box:
+
+CheckBox
+---
+
+.. class:: CheckBox
+
+    A CheckBox can have three states of its `data` property: `True`, `False` or `None`
+
+    .. attribute:: on_click
+
+        If a callable is assigned here it is called when the button is
+        clicked.
+
+
 .. _tymber-class-splitter:
 
 Splitter
@@ -769,9 +784,9 @@ ListView
 FileSelector
 ------------
 
-.. class:: FileSelector( caption[, path])
+.. class:: FileSelector( caption[, path, name, extension, save])
 
-    File selection dialog. *path* is the initial path.
+    File selection dialog. *path* is the initial path, *name* the default name, *extension* the default extension and *save* if 'True' indicates a 'Save' dialog.
     
     .. method:: run()
 

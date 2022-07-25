@@ -124,13 +124,13 @@ TyListView_RenderData(TyListViewObject* self)
 	if (self->pyData == NULL || self->pyData == Py_None) {
 		return TRUE;
 	}
-
 	lvItem.mask = LVIF_TEXT;
 	lvItem.cchTextMax = 256;
 	lvItem.stateMask = 0;
 	lvItem.state = 0;
 	lvItem.iSubItem = 0;
 	lvItem.pszText = L"";
+	self->nSelectedRow = -1;
 	nRows = PySequence_Size(self->pyData);
 	for (nRow = 0; nRow < nRows; nRow++) {
 		lvItem.iItem = nRow;
@@ -421,7 +421,7 @@ static PyMemberDef TyListView_members[] = {
 
 static PyMethodDef TyListView_methods[] = {
 	{ "add_row", (PyCFunction)TyListView_add_row, METH_VARARGS | METH_KEYWORDS, "Insert a row at given index or append it at bottom." },
-	{ "update_row", (PyCFunction)TyListView_update_row, METH_VARARGS | METH_KEYWORDS, "Insert a row at given index or selected one." },
+	{ "update_row", (PyCFunction)TyListView_update_row, METH_VARARGS | METH_KEYWORDS, "Update a row at given index or selected one." },
 	{ "delete_row", (PyCFunction)TyListView_delete_row, METH_VARARGS | METH_KEYWORDS, "Delete a row at given index or selected one." },
 	{ NULL }
 };

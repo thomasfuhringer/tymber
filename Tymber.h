@@ -1,4 +1,4 @@
-﻿// Tymber.h  |  Tymber © 2020 by Thomas Führinger <thomasfuhringer@live.com>
+﻿// Tymber.h  |  Tymber © 2022 by Thomas Führinger <thomasfuhringer@live.com>
 
 #ifndef TYMBER_H
 #define TYMBER_H
@@ -100,6 +100,8 @@
 #include "ComboBoxObject.h"
 #include "ListViewObject.h"
 #include "FileSelectorObject.h"
+#include "TextViewObject.h"
+#include "CheckBoxObject.h"
 
 typedef struct _TyMenuItemObject TyMenuItemObject;
 typedef struct _TyApplicationObject TyApplicationObject;

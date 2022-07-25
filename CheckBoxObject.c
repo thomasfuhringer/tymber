@@ -1,13 +1,14 @@
-﻿// ButtonObject.c  | Tymber © 2020 by Thomas Führinger
+﻿// CheckBoxObject.c  | Tymber © 2022 by Thomas Führinger
 #include "Tymber.h"
 
-static LRESULT CALLBACK TyButtonProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK TyCheckBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static PyObject*
-TyButton_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
+TyCheckBox_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-	TyButtonObject* self = (TyButtonObject*)TyButtonType.tp_base->tp_new(type, args, kwds);
+	TyCheckBoxObject* self = (TyCheckBoxObject*)TyCheckBoxType.tp_base->tp_new(type, args, kwds);
 	if (self != NULL) {
+		self->pyDataType = &PyBool_Type;
 		self->pyOnClickCB = NULL;
 		return (PyObject*)self;
 	}
@@ -16,18 +17,19 @@ TyButton_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 static int
-TyButton_init(TyButtonObject* self, PyObject* args, PyObject* kwds)
+TyCheckBox_init(TyCheckBoxObject* self, PyObject* args, PyObject* kwds)
 {
-	if (TyButtonType.tp_base->tp_init((PyObject*)self, args, kwds) < 0)
+	if (TyCheckBoxType.tp_base->tp_init((PyObject*)self, args, kwds) < 0)
 		return -1;
 
 	RECT rect;
 	TyWidget_CalculateRect(self, &rect);
 
-	self->hWin = CreateWindowEx(0, L"BUTTON", L"OK",
-		WS_TABSTOP | WS_CHILD | BS_TEXT | BS_PUSHBUTTON | WS_TABSTOP | (self->bVisible ? WS_VISIBLE : 0), // | BS_NOTIFY
+	self->hWin = CreateWindowEx(0, L"BUTTON", L"Checkbox",
+		BS_3STATE | WS_TABSTOP | WS_CHILD | (self->bVisible ? WS_VISIBLE : 0),
 		rect.left, rect.top, rect.right, rect.bottom,
 		self->hwndParent, (HMENU)IDC_TYBUTTON, g->hInstance, NULL);
+	SendMessage(self->hWin, BM_SETCHECK, BST_INDETERMINATE, 0);
 
 	if (self->hWin == NULL) {
 		PyErr_SetFromWindowsErr(0);
@@ -39,14 +41,14 @@ TyButton_init(TyButtonObject* self, PyObject* args, PyObject* kwds)
 			return -1;
 
 	SetWindowLongPtr(self->hWin, GWLP_USERDATA, (LONG_PTR)self);
-	self->fnOldWinProcedure = (WNDPROC)SetWindowLongPtrW(self->hWin, GWLP_WNDPROC, (LONG_PTR)TyButtonProc);
+	self->fnOldWinProcedure = (WNDPROC)SetWindowLongPtrW(self->hWin, GWLP_WNDPROC, (LONG_PTR)TyCheckBoxProc);
 	SendMessage(self->hWin, WM_SETFONT, (WPARAM)g->hfDefaultFont, MAKELPARAM(FALSE, 0));
 
 	return 0;
 }
 
 BOOL
-TyButton_OnClick(TyButtonObject* self)
+TyCheckBox_OnClick(TyCheckBoxObject* self)
 {
 	if (self->pyOnClickCB) {
 		PyObject* pyResult = PyObject_CallFunction(self->pyOnClickCB, "(O)", self);
@@ -58,21 +60,43 @@ TyButton_OnClick(TyButtonObject* self)
 }
 
 static void
-TyButton_dealloc(TyButtonObject* self)
+TyCheckBox_dealloc(TyCheckBoxObject* self)
 {
 	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
 }
 
+BOOL
+TyCheckBox_SetData(TyComboBoxObject* self, PyObject* pyData)
+{
+	if (self->pyData == pyData)
+		return TRUE;
+
+	if (!PyBool_Check(pyData) && !(pyData == Py_None)) {
+		PyErr_Format(PyExc_AttributeError, "Please assign a Bool or None!");
+		return FALSE;
+	}
+
+	if (!TyWidget_SetData((TyWidgetObject*)self, pyData))
+		return FALSE;
+
+	if (pyData == Py_None) {
+		SendMessage(self->hWin, BM_SETCHECK, BST_INDETERMINATE, 0);
+	}
+	else {
+		SendMessage(self->hWin, BM_SETCHECK, pyData == Py_True ? BST_CHECKED : BST_UNCHECKED, 0);
+	}
+	return TRUE;
+}
+
 static int
-TyButton_setattro(TyButtonObject* self, PyObject* pyAttributeName, PyObject* pyValue)
+TyCheckBox_setattro(TyCheckBoxObject* self, PyObject* pyAttributeName, PyObject* pyValue)
 {
 	if (PyUnicode_Check(pyAttributeName)) {
 		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "on_click") == 0) {
 			if (PyCallable_Check(pyValue)) {
 				Py_XINCREF(pyValue);
 				Py_XDECREF(self->pyOnClickCB);
-				self->pyOnClickCB = pyValue;/*
-				TyAttachObject(self->pyOnClickCB, pyValue);*/
+				self->pyOnClickCB = pyValue;
 				return 0;
 			}
 			else {
@@ -80,12 +104,17 @@ TyButton_setattro(TyButtonObject* self, PyObject* pyAttributeName, PyObject* pyV
 				return -1;
 			}
 		}
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "data") == 0) {
+			if (!TyCheckBox_SetData(self, pyValue))
+				return -1;
+			return 0;
+		}
 	}
 	return Py_TYPE(self)->tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
 }
 
 static PyObject*
-TyButton_getattro(TyButtonObject* self, PyObject* pyAttributeName)
+TyCheckBox_getattro(TyCheckBoxObject* self, PyObject* pyAttributeName)
 {
 	PyObject* pyResult;
 	pyResult = PyObject_GenericGetAttr((PyObject*)self, pyAttributeName);
@@ -96,21 +125,22 @@ TyButton_getattro(TyButtonObject* self, PyObject* pyAttributeName)
 	return Py_TYPE(self)->tp_base->tp_getattro((PyObject*)self, pyAttributeName);
 }
 
-static PyMemberDef TyButton_members[] = {
-	{ "on_click", T_OBJECT_EX, offsetof(TyButtonObject, pyOnClickCB), READONLY, "On Click callback" },
+static PyMemberDef TyCheckBox_members[] = {
+	{ "data", T_OBJECT, offsetof(TyCheckBoxObject, pyData), READONLY, "Data value" },
+	{ "on_click", T_OBJECT_EX, offsetof(TyCheckBoxObject, pyOnClickCB), READONLY, "On Click callback" },
 	{ NULL }
 };
 
-static PyMethodDef TyButton_methods[] = {
+static PyMethodDef TyCheckBox_methods[] = {
 	{ NULL }
 };
 
-PyTypeObject TyButtonType = {
+PyTypeObject TyCheckBoxType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"tymber.Button",           /* tp_name */
-	sizeof(TyButtonObject),    /* tp_basicsize */
+	"tymber.CheckBox",         /* tp_name */
+	sizeof(TyCheckBoxObject),  /* tp_basicsize */
 	0,                         /* tp_itemsize */
-	(destructor)TyButton_dealloc, /* tp_dealloc */
+	(destructor)TyCheckBox_dealloc, /* tp_dealloc */
 	0,                         /* tp_print */
 	0,                         /* tp_getattr */
 	0,                         /* tp_setattr */
@@ -122,43 +152,48 @@ PyTypeObject TyButtonType = {
 	0,                         /* tp_hash  */
 	0,                         /* tp_call */
 	0,                         /* tp_str */
-	TyButton_getattro,         /* tp_getattro */
-	TyButton_setattro,         /* tp_setattro */
+	TyCheckBox_getattro,       /* tp_getattro */
+	TyCheckBox_setattro,       /* tp_setattro */
 	0,                         /* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	"Button widget",           /* tp_doc */
+	"CheckBox widget",         /* tp_doc */
 	0,                         /* tp_traverse */
 	0,                         /* tp_clear */
 	0,                         /* tp_richcompare */
 	0,                         /* tp_weaklistoffset */
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
-	TyButton_methods,          /* tp_methods */
-	TyButton_members,          /* tp_members */
+	TyCheckBox_methods,        /* tp_methods */
+	TyCheckBox_members,        /* tp_members */
 	0,                         /* tp_getset */
 	&TyWidgetType,             /* tp_base */
 	0,                         /* tp_dict */
 	0,                         /* tp_descr_get */
 	0,                         /* tp_descr_set */
 	0,                         /* tp_dictoffset */
-	(initproc)TyButton_init,   /* tp_init */
+	(initproc)TyCheckBox_init, /* tp_init */
 	0,                         /* tp_alloc */
-	TyButton_new,              /* tp_new */
+	TyCheckBox_new,            /* tp_new */
 	PyObject_Free,             /* tp_free */
 };
 
 static LRESULT CALLBACK
-TyButtonProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+TyCheckBoxProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	TyButtonObject* self = (TyButtonObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	TyCheckBoxObject* self = (TyButtonObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	switch (uMsg)
 	{
 	case OCM_COMMAND:
 		switch (HIWORD(wParam))
 		{
 		case BN_CLICKED:
-			if (!TyButton_OnClick(self))
-				PyErr_Print();
+			if (self->pyOnClickCB == NULL || self->pyOnClickCB == Py_None) {
+				if (!TyCheckBox_SetData(self, self->pyData == Py_False ? Py_True : Py_False))
+					return -1;
+			}
+			else
+				if (!TyButton_OnClick(self))
+					PyErr_Print();
 			return 0;
 		}
 		break;
@@ -173,7 +208,5 @@ TyButtonProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	default:
 		break;
 	}
-	//if (uMsg >= OCM__BASE)
-	//	uMsg -= OCM__BASE;
 	return CallWindowProc(self->fnOldWinProcedure, hwnd, uMsg, wParam, lParam);
 }

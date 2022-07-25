@@ -26,13 +26,13 @@ toU8(const LPWSTR szUTF16)
 
 	int cbUTF8 = WideCharToMultiByte(CP_UTF8, 0, szUTF16, -1, NULL, 0, NULL, NULL);
 	if (cbUTF8 == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "Sting converson to wide character failed.");
+		PyErr_SetFromWindowsErr(0);
 		return NULL;
 	}
 	char* strTextUTF8 = (char*)PyMem_RawMalloc(cbUTF8);
 	int result = WideCharToMultiByte(CP_UTF8, 0, szUTF16, -1, strTextUTF8, cbUTF8, NULL, NULL);
 	if (result == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "Sting converson to wide character failed.");
+		PyErr_SetFromWindowsErr(0);
 		return NULL;
 	}
 	return strTextUTF8;
@@ -48,13 +48,15 @@ toW(const char* strTextUTF8)
 
 	int cchUTF16 = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, strTextUTF8, -1, NULL, 0); // request buffer size
 	if (cchUTF16 == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "Sting converson to wide character failed.");
+		//PyErr_SetString(PyExc_RuntimeError, "Sting converson to wide character failed.");
+		PyErr_SetFromWindowsErr(0);
 		return NULL;
 	}
 	LPWSTR szUTF16 = (LPWSTR)PyMem_RawMalloc(cchUTF16 * sizeof(WCHAR));
 	int result = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, strTextUTF8, -1, szUTF16, cchUTF16);
 	if (result == 0) {
-		PyErr_SetString(PyExc_RuntimeError, "Sting converson to wide character failed.");
+		//PyErr_SetString(PyExc_RuntimeError, "Sting converson to wide character failed.");
+		PyErr_SetFromWindowsErr(0);
 		return NULL;
 	}
 	return szUTF16;

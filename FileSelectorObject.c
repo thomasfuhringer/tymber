@@ -5,6 +5,7 @@ TyFileSelector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
 	TyFileSelectorObject* self = (TyFileSelectorObject*)type->tp_alloc(type, 0);
 	if (self != NULL) {
+		self->bSave = FALSE;
 		return (PyObject*)self;
 	}
 	else
@@ -14,16 +15,20 @@ TyFileSelector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 static int
 TyFileSelector_init(TyFileSelectorObject* self, PyObject* args, PyObject* kwds)
 {
-	static char* kwlist[] = { "caption", "path",NULL };
-	LPCSTR strCaption, strInitialPath = NULL;
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|s", kwlist,
+	static char* kwlist[] = { "caption", "path", "name", "extension", "save", NULL };
+	LPCSTR strCaption, strInitialPath = NULL, strName = NULL, strExtension = NULL;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|zzzb", kwlist,
 		&strCaption,
-		&strInitialPath))
+		&strInitialPath,
+		&strName,
+		&strExtension,
+		&self->bSave))
 		return -1;
 
 	self->szCaption = toW(strCaption);
 	self->szInitialPath = toW(strInitialPath);
-
+	self->szName = toW(strName);
+	self->szExtension = toW(strExtension);
 	return 0;
 }
 
@@ -33,29 +38,45 @@ TyFileSelector_run(TyFileSelectorObject* self)
 	OPENFILENAME ofn;
 	//wchar_t szFilter[] = L"Bitmap (*.BMP)\0*.bmp\0";
 	wchar_t szOpenFileNamePath[MAX_PATH];
-	PyObject* pyFileNamePath;
+	wchar_t szDefExt[MAX_PATH];
+	szOpenFileNamePath[0] = '\0';
+	if (self->szName)
+		StringCchCopyW(szOpenFileNamePath, MAX_PATH, self->szName);
 
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = ((TyWindowObject*)g->pyApp->pyWindow)->hWin;
-	ofn.lpstrFilter = 0;// szFilter;
+	//ofn.lpstrFilter = 0;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.nFilterIndex = 0;
 	ofn.lpstrFile = szOpenFileNamePath;
-	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = MAX_PATH;
-	if (self->szInitialPath)
-		ofn.lpstrInitialDir = self->szInitialPath;
+	ofn.lpstrInitialDir = self->szInitialPath == NULL ? NULL : self->szInitialPath;
 	ofn.lpstrTitle = self->szCaption;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST; //OFN_HIDEREADONLY | OFN_CREATEPROMPT ;
-	ofn.lpstrDefExt = 0;// L"bmp";
+	ofn.Flags = OFN_PATHMUSTEXIST | (self->bSave ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST); //OFN_HIDEREADONLY
+	if (self->szExtension) {
+		ZeroMemory(szDefExt, MAX_PATH); // to add the extra '\0'
+		StringCchCopyW(szDefExt, MAX_PATH, self->szExtension);
+		ofn.lpstrFilter = ofn.lpstrDefExt = szDefExt; //   L"mdp\0";
+	}
+	else
+		ofn.lpstrFilter = ofn.lpstrDefExt = NULL;
 
-	if (GetOpenFileNameW(&ofn) == TRUE) {
-		pyFileNamePath = PyUnicode_FromWideChar(szOpenFileNamePath, -1);
-		return pyFileNamePath;
+	PyObject* pyFileNamePath;
+	if (self->bSave) {
+		if (GetSaveFileNameW(&ofn) == TRUE) {
+			pyFileNamePath = PyUnicode_FromWideChar(szOpenFileNamePath, -1);
+			return pyFileNamePath;
+		}
+	}
+	else {
+		if (GetOpenFileNameW(&ofn) == TRUE) {
+			pyFileNamePath = PyUnicode_FromWideChar(szOpenFileNamePath, -1);
+			return pyFileNamePath;
+		}
 	}
 	Py_RETURN_NONE;
 }
@@ -65,6 +86,8 @@ TyFileSelector_dealloc(TyFileSelectorObject* self)
 {
 	PyMem_RawFree(self->szCaption);
 	PyMem_RawFree(self->szInitialPath);
+	PyMem_RawFree(self->szName);
+	PyMem_RawFree(self->szExtension);
 	Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
 }
 

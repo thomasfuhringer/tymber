@@ -1,4 +1,4 @@
-﻿// Module.c  | Tymber © 2020 by Thomas Führinger
+﻿// Module.c  | Tymber © 2020 - 2022 by Thomas Führinger
 #include <Tymber.h>
 #include "Version.h"
 
@@ -339,6 +339,12 @@ PyInit_tymber(void)
 	if (PyType_Ready(&TyFileSelectorType) < 0)
 		return NULL;
 
+	if (PyType_Ready(&TyTextViewType) < 0)
+		return NULL;
+
+	if (PyType_Ready(&TyCheckBoxType) < 0)
+		return NULL;
+
 	Py_INCREF(&TyApplicationType);
 	Py_INCREF(&TyWindowType);
 	Py_INCREF(&TyMenuType);
@@ -361,6 +367,8 @@ PyInit_tymber(void)
 	Py_INCREF(&TyComboBoxType);
 	Py_INCREF(&TyListViewType);
 	Py_INCREF(&TyFileSelectorType);
+	Py_INCREF(&TyTextViewType);
+	Py_INCREF(&TyCheckBoxType);
 
 	PyModule_AddObject(pyModule, "Application", (PyObject*)&TyApplicationType);
 	PyModule_AddObject(pyModule, "Window", (PyObject*)&TyWindowType);
@@ -384,6 +392,8 @@ PyInit_tymber(void)
 	PyModule_AddObject(pyModule, "ComboBox", (PyObject*)&TyComboBoxType);
 	PyModule_AddObject(pyModule, "ListView", (PyObject*)&TyListViewType);
 	PyModule_AddObject(pyModule, "FileSelector", (PyObject*)&TyFileSelectorType);
+	PyModule_AddObject(pyModule, "TextView", (PyObject*)&TyTextViewType);
+	PyModule_AddObject(pyModule, "CheckBox", (PyObject*)&TyCheckBoxType);
 
 	if (PyDict_SetItemString(TyWidgetType.tp_dict, "default_coordinate", PyLong_FromLong(CW_USEDEFAULT)) == -1)
 		return NULL;
