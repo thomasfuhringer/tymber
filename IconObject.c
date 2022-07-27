@@ -124,12 +124,6 @@ TyIcon_init(TyIconObject* self, PyObject* args, PyObject* kwds)
 					return -1;
 				}
 			}
-			else if (pySource == PyObject_GetAttrString(g->pyStockIconEnum, "window")) {
-				if (ExtractIconExW(L"SHELL32.DLL", -3, &self->hIconLarge, &self->hWin, 1) == UINT_MAX) {
-					PyErr_SetFromWindowsErr(0);
-					return -1;
-				}
-			}
 			else if (pySource == PyObject_GetAttrString(g->pyStockIconEnum, "undo")) {
 				if (ExtractIconExW(L"IMAGERES.DLL", -5315, &self->hIconLarge, &self->hWin, 1) == UINT_MAX) {
 					PyErr_SetFromWindowsErr(0);
