@@ -5,7 +5,7 @@
 typedef struct _TyTextViewObject
 {
 	TyWidgetObject_HEAD
-	//BOOL bMarkdown;
+		PyObject* pyOnClickLinkCB;
 }
 TyTextViewObject;
 

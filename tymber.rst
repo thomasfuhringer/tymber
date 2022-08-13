@@ -379,7 +379,7 @@ Entry
 
     .. attribute:: multiline
 
-        Characters are not legible.
+        Accomodate multiple lines.
 
 
 .. _tymber-class-combobox:
@@ -839,3 +839,23 @@ MdiWindow
     .. method:: close()
 
         Remove the window from the parent's *children* collection (and consequently destroy it).
+
+
+.. _tymber-class-text-view:
+
+TextView
+---------
+
+.. class:: TextView()
+
+    Displays plain or Markdown text.
+	
+    .. attribute:: on_click_link
+
+        If a callable is assigned here it is called when a hyperlink is clicked is
+        clicked.
+		
+		
+    .. attribute:: data
+
+        Assign either a string of text to be rendered or a tuple (text, directory) to render Markdown.

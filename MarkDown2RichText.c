@@ -134,14 +134,31 @@ append_buffer_line(char* line)
 			line = pos;
 		}
 		else if (strncmp(pos, "![", 2) == 0) {
-			pos += 2;
-			char* middle = strstr(pos, "](") + 2;
-			char* end = strstr(middle + 2, ")");
-			*end = 0;
-			append_image(middle);
+			char* middle = strstr(pos + 2, "](") + 2;
+			if (middle) {
+				char* end = strstr(middle + 2, ")");
+				*end = 0;
+				append_image(middle);
 
-			pos = end + 1;
-			line = pos;
+				pos = end + 1;
+				line = pos;
+			}
+		}
+		else if (strncmp(pos, "[", 1) == 0) {
+			char* middle = strstr(pos + 1, "](") + 2;
+			if (middle) {
+				char* end = strstr(middle + 2, ")");
+				*end = 0;
+				*(middle - 2) = 0;
+				append_buffer("\\ul {\\field{\\*\\fldinst {HYPERLINK \"");
+				append_buffer(middle);
+				append_buffer("\" }}{\\fldrslt {");
+				append_buffer(pos + 1);
+				append_buffer("}}}\\ul0");
+
+				pos = end + 1;
+				line = pos;
+			}
 		}
 		pos += 1;
 	}

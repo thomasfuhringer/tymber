@@ -42,9 +42,11 @@ TyTextView_init(TyTextViewObject* self, PyObject* args, PyObject* kwds)
 		PyErr_SetFromWindowsErr(0);
 		return -1;
 	}
-
 	LRESULT CALLBACK TyTextViewProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	self->fnOldWinProcedure = (WNDPROC)SetWindowLongPtrW(self->hWin, GWLP_WNDPROC, (LONG_PTR)TyTextViewProc);
 	SetWindowLongPtr(self->hWin, GWLP_USERDATA, (LONG_PTR)self);
+	SendMessage(self->hWin, EM_SETEVENTMASK, 0, ENM_LINK);
+	SendMessage(self->hWin, EM_SETEDITSTYLEEX, 0, SES_EX_HANDLEFRIENDLYURL | SES_HYPERLINKTOOLTIPS);
 	return 0;
 }
 
@@ -119,6 +121,18 @@ TyTextView_SetData(TyTextViewObject* self, PyObject* pyData)
 	return TyTextView_RenderData(self, TRUE);
 }
 
+BOOL
+TyTextView_OnClickLink(TyTextViewObject* self, char* strLink)
+{
+	if (self->pyOnClickLinkCB) {
+		PyObject* pyResult = PyObject_CallFunction(self->pyOnClickLinkCB, "(Os)", self, strLink);
+		if (pyResult == NULL)
+			return FALSE;
+		Py_DECREF(pyResult);
+	}
+	return TRUE;
+}
+
 static int
 TyTextView_setattro(TyTextViewObject* self, PyObject* pyAttributeName, PyObject* pyValue)
 {
@@ -127,6 +141,18 @@ TyTextView_setattro(TyTextViewObject* self, PyObject* pyAttributeName, PyObject*
 			if (!TyTextView_SetData((TyTextViewObject*)self, pyValue))
 				return -1;
 			return 0;
+		}
+		if (PyUnicode_CompareWithASCIIString(pyAttributeName, "on_click_link") == 0) {
+			if (PyCallable_Check(pyValue)) {
+				Py_XINCREF(pyValue);
+				Py_XDECREF(self->pyOnClickLinkCB);
+				self->pyOnClickLinkCB = pyValue;
+				return 0;
+			}
+			else {
+				PyErr_SetString(PyExc_TypeError, "Assign a function!");
+				return -1;
+			}
 		}
 	}
 	return TyTextViewType.tp_base->tp_setattro((PyObject*)self, pyAttributeName, pyValue);
@@ -152,6 +178,7 @@ TyTextView_dealloc(TyTextViewObject* self)
 static PyMemberDef TyTextView_members[] = {
 	{ "data", T_OBJECT, offsetof(TyTextViewObject, pyData), READONLY, "Data value" },
 	{ "margin", T_INT, offsetof(TyTextViewObject, iMargin), 0, "Margin inside widget" },
+	{ "on_click_link", T_OBJECT_EX, offsetof(TyTextViewObject, pyOnClickLinkCB), READONLY, "On Click Link callback" },
 	{ NULL }
 };
 
@@ -200,3 +227,37 @@ PyTypeObject TyTextViewType = {
 	TyTextView_new,            /* tp_new */
 	PyObject_Free,             /* tp_free */
 };
+
+static LRESULT CALLBACK
+TyTextViewProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	TyTextViewObject* self = (TyTextViewObject*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	switch (uMsg)
+	{
+	case WM_NOTIFY+ OCM__BASE: {
+		switch (((LPNMHDR)lParam)->code) {
+		case EN_LINK: {
+			ENLINK* enLinkInfo = (ENLINK*)lParam;
+			TEXTRANGE tr;
+			if (enLinkInfo->msg == WM_LBUTTONUP) {
+				TCHAR szLink[1024];
+				tr.chrg = enLinkInfo->chrg;
+				tr.lpstrText = szLink;
+				SendMessage(hwnd, EM_GETTEXTRANGE, 0, &tr);
+				char* strLink = toU8(szLink);
+
+				if (!TyTextView_OnClickLink(self, strLink))
+					PyErr_Print();
+				free(strLink);
+				break;
+			}
+			break;
+		}
+		}
+		break; }
+
+	default:
+		break;
+	}
+	return CallWindowProc(self->fnOldWinProcedure, hwnd, uMsg, wParam, lParam);
+}
